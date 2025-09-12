@@ -25,7 +25,6 @@ class Game:
         self.load_level(self.level_index)
         
     def load_level(self, index):
-        # cria loop no índice do nível
         self.level_index = index % len(self.level_files)
         filename = self.level_files[self.level_index]
         filepath = os.path.join(Config.LEVELS_DIR, filename)
@@ -37,7 +36,9 @@ class Game:
         obstacles_data = level_data["obstacles"]
         hole_position_data = level_data["hole_position"]
         
-        self.ball = Ball(pos=Vec2(*ball_start_data), vel=Vec2(0, 0))
+        pos_inicial = Vec2(x=ball_start_data[0], y=Config.RAIO_BOLA, z=ball_start_data[1])
+        self.ball = Ball(pos=pos_inicial, vel=Vec2(0, 0, 0))
+
         self.obstacles = [BoxObstacle(**data) for data in obstacles_data]
         self.hole_position = tuple(hole_position_data)
 
@@ -60,7 +61,6 @@ class Game:
         if self.won: return
         self.ball.update(Config.DT)
         
-        # Colisão com bordas
         for axis in ('x','z'):
             pos_axis = getattr(self.ball.pos, axis)
             vel_axis = getattr(self.ball.vel, axis)
@@ -71,20 +71,37 @@ class Game:
                 setattr(self.ball.pos, axis, Config.CAMPO_METADE - self.ball.radius)
                 setattr(self.ball.vel, axis, -vel_axis * 0.9)
 
-        # Colisão com obstáculos
         for obstacle in self.obstacles:
             obstacle.collide_ball(self.ball)
             
-        # Buraco
         dx = self.ball.pos.x - self.hole_position[0]
         dz = self.ball.pos.z - self.hole_position[1]
-        d = sqrt(dx*dx + dz*dz)
-        if d < Config.RAIO_BURACO * 0.9 and self.ball.speed() < 0.06:
+        dist_ao_buraco = sqrt(dx*dx + dz*dz)
+
+        if dist_ao_buraco < Config.RAIO_BURACO and self.ball.pos.y < -self.ball.radius:
             self.won = True
-            self.ball.vel.x = self.ball.vel.z = 0.0
+            self.ball.vel.x = self.ball.vel.y = self.ball.vel.z = 0.0
             if self.sounds.get("win"): self.sounds["win"].play()
             self.save_score()
             glutTimerFunc(2000, lambda v: self.next_level(), 0)
+            return
+
+        # CONDIÇÃO CORRIGIDA: Verifica se a bola está sobre o buraco E LENTA o suficiente
+        if dist_ao_buraco < Config.RAIO_BURACO and self.ball.horizontal_speed() < Config.VELOCIDADE_MAX_QUEDA:
+            if dist_ao_buraco > 0.01:
+                dir_x = -dx / dist_ao_buraco
+                dir_z = -dz / dist_ao_buraco
+                forca = Config.FORCA_ATRACAO_BURACO * Config.DT
+                self.ball.vel.x += dir_x * forca
+                self.ball.vel.z += dir_z * forca
+        else:
+            # Sobre o chão (ou sobre o buraco, mas muito rápida): implementa a colisão com o plano y=0
+            if self.ball.pos.y < self.ball.radius:
+                self.ball.pos.y = self.ball.radius
+                if self.ball.vel.y < 0:
+                    self.ball.vel.y *= -Config.RESTITUICAO_SOLO
+                    if abs(self.ball.vel.y) < 0.01:
+                        self.ball.vel.y = 0
 
     def save_score(self):
         os.makedirs(Config.DATA_DIR, exist_ok=True)
@@ -104,14 +121,12 @@ class Game:
             json.dump(data, f, indent=2)
 
     def start_shooting(self):
-        # Inicia oscilação da força enquanto espaço estiver pressionado
-        if self.ball.speed() > 0.01 or self.won:
+        if self.ball.horizontal_speed() > 0.01 or self.won:
             return
         if self.isShooting:
             return
         self.isShooting = True
         self.power_dir = 1
-        # Garante limites
         if self.shot_power < Config.FORCA_MINIMA or self.shot_power > Config.FORCA_MAXIMA:
             self.shot_power = 0.35
         self._schedule_power_tick()
@@ -126,8 +141,6 @@ class Game:
         elif self.shot_power <= Config.FORCA_MINIMA:
             self.shot_power = Config.FORCA_MINIMA
             self.power_dir = 1
-        # if self.renderer:
-        #     self.renderer.update_power_bar(self.shot_power)
         glutTimerFunc(30, lambda v: self._schedule_power_tick(), 0)
 
     def shoot(self):

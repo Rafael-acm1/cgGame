@@ -44,7 +44,7 @@ class Renderer:
             glTexCoord2f(0,s); glVertex3f(-Config.CAMPO_METADE, 0.0,  Config.CAMPO_METADE)
             glEnd()
             glDisable(GL_TEXTURE_2D)
-        else: # caso a textura não tenha sido carregada, desenha a cor sólida
+        else: 
             glColor3f(0.05, 0.55, 0.15)
             glBegin(GL_QUADS)
             glVertex3f(-Config.CAMPO_METADE, 0.0, -Config.CAMPO_METADE)
@@ -69,7 +69,7 @@ class Renderer:
     def draw_ball(self):
         b = self.game.ball
         glPushMatrix()
-        glTranslatef(b.pos.x, b.radius, b.pos.z)
+        glTranslatef(b.pos.x, b.pos.y, b.pos.z)
         glColor3f(1.0, 1.0, 1.0)
         glutSolidSphere(b.radius, 24, 24)
         glPopMatrix()
@@ -130,12 +130,12 @@ class Renderer:
         self.draw_hole()
         self.draw_obstacles()
         self.draw_ball()
-        if not self.game.won and self.game.ball.speed() < 0.01:
+        # AJUSTE: Usa horizontal_speed() para decidir se mostra a mira
+        if not self.game.won and self.game.ball.horizontal_speed() < 0.01:
             self.draw_aim()
         self.draw_ui()
         self.draw_power_bar()
         glutSwapBuffers()
-
 
     def render(self):
         if self.game.SCREEN_STATE == Config.SCREEN_STATE['PLAYING']:
@@ -145,7 +145,6 @@ class Renderer:
 
     def draw_power_bar(self):
         game = self.game
-        # Mostra só enquanto carregando
         if not game.isShooting:
             return
 
@@ -161,9 +160,8 @@ class Renderer:
         bar_h = 18
         margin = 15
         x = (w - bar_w) // 2
-        y = margin  # canto inferior (origem em baixo se usarmos ortho 0..h)
+        y = margin
 
-        # Salva estado
         glMatrixMode(GL_PROJECTION)
         glPushMatrix()
         glLoadIdentity()
@@ -176,17 +174,12 @@ class Renderer:
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_LIGHTING)
 
-        # Fundo
         ui.draw_rect(x, y, bar_w, bar_h, color=(0,0,0,0.65))
-
-        # Borda
         ui.draw_rect_outline(x, y, bar_w, bar_h, color=(1,1,1,0.9), width=2)
 
-        # Preenchimento
         fill_w = int(bar_w * ratio)
         ui.draw_rect(x+1, y+1, fill_w-2 if fill_w>2 else 0, bar_h-2, color=(ratio, 1 - ratio / 5, 0.2, 0.9))
 
-        # marcador central
         mid_x = x + bar_w // 2
         glColor3f(1.0, 1.0, 1.0)
         glBegin(GL_LINES)
@@ -194,7 +187,6 @@ class Renderer:
         glVertex2f(mid_x, y + bar_h)
         glEnd()
 
-        # Restaura estado
         glEnable(GL_DEPTH_TEST)
         glMatrixMode(GL_MODELVIEW)
         glPopMatrix()
@@ -204,25 +196,19 @@ class Renderer:
 
     def render_menu(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
         w = glutGet(GLUT_WINDOW_WIDTH)
         h = glutGet(GLUT_WINDOW_HEIGHT)
 
-        # Configura projeção 2D
         glMatrixMode(GL_PROJECTION)
         glPushMatrix()
         glLoadIdentity()
         glOrtho(0, w, 0, h, -1, 1)
-
         glMatrixMode(GL_MODELVIEW)
         glPushMatrix()
         glLoadIdentity()
-
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_LIGHTING)
-
-        # Fundo simples (opcional: cor sólida já definida pelo clear color)
-        # Desenha título
+        
         titulo = "CGolf"
         def text_width(txt):
             return sum(glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, ord(c)) for c in txt)
@@ -234,13 +220,11 @@ class Renderer:
 
         tw = text_width(titulo)
         draw_text((w - tw)//2, h - 100, titulo)
-
-        # Botão "Iniciar Jogo"
+        
         btn_w, btn_h = 220, 60
         btn_x = (w - btn_w)//2
         btn_y = h//2 - btn_h//2
 
-        # Armazena bounds para possível detecção de clique externamente
         self.menu_buttons = [{
             "id": "start",
             "label": "Iniciar Jogo",
@@ -250,16 +234,13 @@ class Renderer:
             "h": btn_h
         }]
 
-        # Desenha botão
         ui.draw_rect(btn_x, btn_y, btn_w, btn_h, color=(0,0,0,0.55))
         ui.draw_rect_outline(btn_x, btn_y, btn_w, btn_h, color=(1,1,1,0.9), width=2)
-
         label = "Iniciar Jogo"
         lw = text_width(label)
-        lh = 18  # altura aproximada da fonte
+        lh = 18
         draw_text(btn_x + (btn_w - lw)//2, btn_y + (btn_h - lh)//2 + 6, label)
 
-        # Restaura estado
         glEnable(GL_DEPTH_TEST)
         glMatrixMode(GL_MODELVIEW)
         glPopMatrix()
@@ -269,18 +250,14 @@ class Renderer:
         glutSwapBuffers()
 
     def on_mouse(self, button, state, x, y):
-        # Só lida com cliques no menu
         if self.game.SCREEN_STATE != Config.SCREEN_STATE['MENU']:
             return
         if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
             h = glutGet(GLUT_WINDOW_HEIGHT)
-            y_gl = h - y  # converte para o sistema ortho (origem em baixo)
+            y_gl = h - y
             for b in self.menu_buttons:
                 if (x >= b['x'] and x <= b['x'] + b['w'] and
                     y_gl >= b['y'] and y_gl <= b['y'] + b['h']):
                     if b['id'] == 'start':
-                        # Troca de tela
                         self.game.SCREEN_STATE = Config.SCREEN_STATE['PLAYING']
                     break
-
-

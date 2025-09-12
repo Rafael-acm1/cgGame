@@ -11,11 +11,11 @@ class Config:
     FORCA_MULTIPLICADOR = 0.75
 
     RAIO_ATRACAO_BURACO = 0.8       # alcance em múltiplos do RAIO_BURACO
-    FORCA_ATRACAO_BURACO = 0.4            # "aceleração" base (aumente se ainda fraco)
+    FORCA_ATRACAO_BURACO = 0.4      # "aceleração" base (aumente se ainda fraco)
     AMORTECIMENTO_BURACO = 1.5 
 
-    FORCA_GRAVIDADE = 9.8 * 0.4          # escala para caber no ritmo do jogo
-    RESTITUICAO_SOLO = 0.45        # quique
+    FORCA_GRAVIDADE = 9.8 * 0.4     # escala para caber no ritmo do jogo
+    RESTITUICAO_SOLO = 0.45         # quique
 
     FORCA_MAXIMA = 1.5
     FORCA_MINIMA = 0.05
@@ -33,3 +33,5 @@ class Config:
         "PLAYING": 1,
         "SCORES": 2
     }
+
+    VELOCIDADE_MAX_QUEDA = 0.5
