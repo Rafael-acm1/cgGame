@@ -1,5 +1,5 @@
 {
-  "ball_start": [-4.5, 0, -4.0],
+  "ball_start": [-4.5, 80, 50],
   "hole_position": [2.5, 3.0],
   "obstacles": [
     {"cx": 0.0, "cz": 0.0, "sx": 0.2, "sz": 2.0, "h": 0.4},

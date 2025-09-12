@@ -6,16 +6,26 @@ class Config:
     RAIO_BOLA = 0.22
     ATRITO = 0.98
     VEL_MIN = 0.003
-    DT = 0.4
-    RAIO_BURACO = 0.35
-    FORCA_MULTIPLICADOR = 0.75
+    
+    # --- MUDANÇA 1 ---
+    # Diminuímos o DT para uma física mais precisa e estável.
+    DT = 0.05
 
-    RAIO_ATRACAO_BURACO = 0.8       # alcance em múltiplos do RAIO_BURACO
-    FORCA_ATRACAO_BURACO = 0.4      # "aceleração" base (aumente se ainda fraco)
+    RAIO_BURACO = 0.35
+    
+    # --- MUDANÇA 2 ---
+    # Aumentamos o multiplicador da tacada para compensar o DT menor.
+    FORCA_MULTIPLICADOR = 3.5
+
+    RAIO_ATRACAO_BURACO = 0.8
+    FORCA_ATRACAO_BURACO = 0.4
     AMORTECIMENTO_BURACO = 1.5 
 
-    FORCA_GRAVIDADE = 9.8 * 0.4     # escala para caber no ritmo do jogo
-    RESTITUICAO_SOLO = 0.45         # quique
+    # --- MUDANÇA 3 ---
+    # Aumentamos a gravidade para compensar o DT menor.
+    FORCA_GRAVIDADE = 9.8 * 1.5
+    
+    RESTITUICAO_SOLO = 0.45
 
     FORCA_MAXIMA = 1.5
     FORCA_MINIMA = 0.05
@@ -28,10 +38,9 @@ class Config:
     DATA_DIR = "data"
     SCORE_FILE = os.path.join(DATA_DIR, "scores.json")
 
-    SCREEN_STATE = {
-        "MENU": 0,
-        "PLAYING": 1,
-        "SCORES": 2
-    }
+    SCREEN_STATE = { "MENU": 0, "PLAYING": 1, "SCORES": 2 }
 
     VELOCIDADE_MAX_QUEDA = 0.5
+    ALTURA_INICIAL_BOLA = 4.0
+    
+    RAMP_FORCE_MULTIPLIER = 0.1
