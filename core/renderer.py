@@ -27,22 +27,37 @@ class Renderer:
         self.menu_buttons = []
         self._ui_prev_depth = None
         
-        # Definição dos cenários por nível
+        
         self.scenarios = {
-            0: "forest",    
+            0: "forest",   
             1: "stadium",  
-            2: "desert",    
-            3: "stadium",   
+            2: "desert",   
+            3: "snow",     
+            4: "volcano",  
+            5: "space",   
+            6: "beach",     
+            7: "city",      
         }
         
     def get_current_scenario(self):
-        """Retorna o cenário atual baseado no nível"""
+      
         level_index = self.game.level_index
-        return self.scenarios.get(level_index, "forest")  # Default: floresta
+        return self.scenarios.get(level_index, "forest") 
 
     
     def initialize_textures(self):
         self.textures['grass'] = load_texture("assets/textures/grass.png")
+        
+
+        try:
+            self.textures['lava'] = load_texture("assets/textures/lava.png")
+            self.textures['volcanic_rock'] = load_texture("assets/textures/volcanic_rock.png")
+            self.textures['obsidian'] = load_texture("assets/textures/obsidian.png")
+            self.textures['molten_rock'] = load_texture("assets/textures/molten_rock.png")
+            print("Texturas carregadas com sucesso!")
+        except Exception as e:
+            print(f"Algumas texturas não foram encontradas: {e}")
+
         
     def draw_ground(self):
         if 'grass' in self.textures:
@@ -130,6 +145,16 @@ class Renderer:
             self.draw_stadium_background()
         elif scenario == "desert":
             self.draw_desert_background()
+        elif scenario == "snow":
+            self.draw_snow_background()
+        elif scenario == "volcano":
+            self.draw_volcano_background()
+        elif scenario == "space":
+            self.draw_space_background()
+        elif scenario == "beach":
+            self.draw_beach_background()
+        elif scenario == "city":
+            self.draw_city_background()
         else:
             # Fallback para floresta se cenário não encontrado
             self.draw_forest_background()
@@ -267,20 +292,21 @@ class Renderer:
             glEnd()
 
     def draw_trees(self):
-        """Desenha árvores decorativas (cenário floresta)"""
+        """Desenha árvores decorativas (cenário floresta) - MAIS PRÓXIMAS"""
         glDisable(GL_TEXTURE_2D)
         
-        # Árvores simples (cilindros marrons com esferas verdes)
+        # Árvores mais próximas do campo
         trees_positions = [
-            (-15, 0, -15), (18, 0, -20), (-22, 0, 12), 
-            (25, 0, 8), (-18, 0, 25), (12, 0, 22),
-            (-8, 0, -25), (30, 0, -8)
+            (-9, 0, -8), (10, 0, -10), (-12, 0, 7), 
+            (11, 0, 9), (-8, 0, 13), (8, 0, 12),
+            (-7, 0, -13), (13, 0, -9), (-10, 0, -11),
+            (9, 0, 14), (12, 0, -12), (-11, 0, 8)
         ]
         
         for x, y, z in trees_positions:
             # Culling simples - só desenha árvores que estão relativamente próximas
             distance_to_ball = ((x - self.game.ball.pos.x)**2 + (z - self.game.ball.pos.z)**2)**0.5
-            if distance_to_ball > 40:  # Não desenha árvores muito distantes
+            if distance_to_ball > 25:  # Reduzido de 40 para 25
                 continue
                 
             glPushMatrix()
@@ -736,20 +762,21 @@ class Renderer:
             glEnd()
 
     def draw_desert_elements(self):
-        """Desenha cactos e elementos do deserto"""
+        """Desenha cactos e elementos do deserto - MAIS PRÓXIMOS"""
         glDisable(GL_TEXTURE_2D)
         
-        # Cactos espalhados
+        # Cactos mais próximos do campo
         cacti_positions = [
-            (-18, 0, -12), (22, 0, -18), (-25, 0, 15), 
-            (28, 0, 10), (-15, 0, 28), (16, 0, 25),
-            (-12, 0, -28), (32, 0, -5)
+            (-10, 0, -7), (11, 0, -9), (-12, 0, 8), 
+            (13, 0, 6), (-8, 0, 14), (9, 0, 12),
+            (-7, 0, -12), (15, 0, -8), (-9, 0, -10),
+            (8, 0, 15), (12, 0, -11), (-11, 0, 10)
         ]
         
         for x, y, z in cacti_positions:
             # Culling simples
             distance_to_ball = ((x - self.game.ball.pos.x)**2 + (z - self.game.ball.pos.z)**2)**0.5
-            if distance_to_ball > 40:
+            if distance_to_ball > 25:  # Reduzido de 40 para 25
                 continue
                 
             glPushMatrix()
@@ -775,6 +802,849 @@ class Renderer:
             glScalef(0.5, 1.5, 0.5)
             glutSolidCube(1.0)
             glPopMatrix()
+            
+            glPopMatrix()
+
+    # ===== CENÁRIO NEVE =====
+    def draw_snow_background(self):
+        """Desenha cenário de neve"""
+        self.draw_snow_sky()
+        self.draw_snow_mountains()
+        self.draw_snow_ground()
+        self.draw_snow_elements()
+
+    def draw_snow_sky(self):
+        """Skybox nevado - céu cinzento"""
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_FOG)
+        
+        glPushMatrix()
+        cam_x = self.game.ball.pos.x if hasattr(self.game, 'ball') else 0
+        cam_z = self.game.ball.pos.z if hasattr(self.game, 'ball') else 0
+        glTranslatef(cam_x, 0, cam_z)
+        
+        size = 80
+        glBegin(GL_QUADS)
+        
+        # Céu nevado - tons de cinza e branco
+        # Face Norte
+        glColor3f(0.9, 0.9, 0.95)  # Branco acinzentado
+        glVertex3f(-size, 0, -size)
+        glVertex3f(size, 0, -size)
+        glColor3f(0.7, 0.7, 0.8)   # Cinza claro
+        glVertex3f(size, size, -size)
+        glVertex3f(-size, size, -size)
+        
+        # Outras faces iguais
+        glColor3f(0.9, 0.9, 0.95)
+        glVertex3f(size, 0, size)
+        glVertex3f(-size, 0, size)
+        glColor3f(0.7, 0.7, 0.8)
+        glVertex3f(-size, size, size)
+        glVertex3f(size, size, size)
+        
+        glColor3f(0.9, 0.9, 0.95)
+        glVertex3f(-size, 0, -size)
+        glVertex3f(-size, 0, size)
+        glColor3f(0.7, 0.7, 0.8)
+        glVertex3f(-size, size, size)
+        glVertex3f(-size, size, -size)
+        
+        glColor3f(0.9, 0.9, 0.95)
+        glVertex3f(size, 0, size)
+        glVertex3f(size, 0, -size)
+        glColor3f(0.7, 0.7, 0.8)
+        glVertex3f(size, size, -size)
+        glVertex3f(size, size, size)
+        
+        # Topo
+        glColor3f(0.6, 0.6, 0.7)
+        glVertex3f(-size, size, -size)
+        glVertex3f(size, size, -size)
+        glVertex3f(size, size, size)
+        glVertex3f(-size, size, size)
+        
+        glEnd()
+        glPopMatrix()
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_FOG)
+
+    def draw_snow_mountains(self):
+        """Montanhas nevadas"""
+        glDisable(GL_TEXTURE_2D)
+        glColor3f(0.95, 0.95, 1.0)  # Branco com leve azul
+        
+        mountains = [
+            [(-30, 0, -25), (-20, 12, -27), (-10, 0, -29)],
+            [(-5, 0, -30), (8, 15, -32), (20, 0, -34)],
+            [(25, 0, -35), (40, 18, -33), (50, 0, -31)],
+            [(-15, 0, 28), (-3, 8, 26), (10, 0, 24)],
+            [(15, 0, 30), (32, 14, 28), (45, 0, 26)]
+        ]
+        
+        for mountain in mountains:
+            glBegin(GL_TRIANGLES)
+            for point in mountain:
+                glVertex3f(*point)
+            glEnd()
+
+    def draw_snow_ground(self):
+        """Chão nevado"""
+        glColor3f(0.92, 0.92, 0.96)  # Branco neve
+        
+        field_size = Config.CAMPO_METADE
+        extended_size = 20.0
+        
+        regions = [
+            [(-extended_size, 0, field_size), (extended_size, 0, extended_size)],
+            [(-extended_size, 0, -extended_size), (extended_size, 0, -field_size)],
+            [(field_size, 0, -field_size), (extended_size, 0, field_size)],
+            [(-extended_size, 0, -field_size), (-field_size, 0, field_size)]
+        ]
+        
+        for (x1, y1, z1), (x2, y2, z2) in regions:
+            glBegin(GL_QUADS)
+            glVertex3f(x1, y1, z1)
+            glVertex3f(x2, y1, z1) 
+            glVertex3f(x2, y2, z2)
+            glVertex3f(x1, y2, z2)
+            glEnd()
+
+    def draw_snow_elements(self):
+        """Bonecos de neve, pinheiros nevados e ursos polares - MAIS PRÓXIMOS"""
+        glDisable(GL_TEXTURE_2D)
+        
+        # Posições misturadas para diferentes elementos
+        element_positions = [
+            (-10, 0, -8), (12, 0, -10), (-15, 0, 9), 
+            (14, 0, 8), (-8, 0, 15), (9, 0, 13),
+            (-6, 0, -12), (16, 0, -6), (-12, 0, -14),
+            (11, 0, -12), (8, 0, -9), (-9, 0, 11)
+        ]
+        
+        for i, (x, y, z) in enumerate(element_positions):
+            glPushMatrix()
+            glTranslatef(x, y, z)
+            
+            # Alterna entre diferentes elementos baseado no índice
+            element_type = i % 3
+            
+            if element_type == 0:  # Boneco de neve
+                self.draw_snowman()
+            elif element_type == 1:  # Pinheiro nevado
+                self.draw_snowy_pine()
+            else:  # Urso polar ou iglu
+                if i % 6 == 2:  # Urso polar
+                    self.draw_polar_bear()
+                else:  # Iglu
+                    self.draw_igloo()
+            
+            glPopMatrix()
+
+    def draw_snowman(self):
+        """Desenha um boneco de neve completo"""
+        # Corpo (3 esferas)
+        glColor3f(0.95, 0.95, 1.0)  # Branco neve
+        
+        # Base (maior)
+        glPushMatrix()
+        glTranslatef(0, 0.8, 0)
+        glutSolidSphere(0.8, 8, 6)
+        glPopMatrix()
+        
+        # Meio
+        glPushMatrix()
+        glTranslatef(0, 2.2, 0)
+        glutSolidSphere(0.6, 8, 6)
+        glPopMatrix()
+        
+        # Cabeça
+        glPushMatrix()
+        glTranslatef(0, 3.4, 0)
+        glutSolidSphere(0.5, 8, 6)
+        glPopMatrix()
+        
+        # Chapéu
+        glColor3f(0.1, 0.1, 0.1)  # Preto
+        glPushMatrix()
+        glTranslatef(0, 3.9, 0)
+        glScalef(0.8, 0.6, 0.8)
+        glutSolidCube(1.0)
+        glPopMatrix()
+        
+        # Cenoura (nariz)
+        glColor3f(1.0, 0.5, 0.0)  # Laranja
+        glPushMatrix()
+        glTranslatef(0, 3.4, 0.5)
+        glRotatef(90, 1, 0, 0)
+        glutSolidCone(0.1, 0.4, 4, 1)
+        glPopMatrix()
+        
+        # Botões
+        glColor3f(0.1, 0.1, 0.1)  # Preto
+        button_positions = [(0, 2.4, 0.6), (0, 2.0, 0.6), (0, 1.6, 0.6)]
+        for bx, by, bz in button_positions:
+            glPushMatrix()
+            glTranslatef(bx, by, bz)
+            glutSolidSphere(0.08, 4, 3)
+            glPopMatrix()
+
+    def draw_snowy_pine(self):
+        """Desenha pinheiro coberto de neve"""
+        # Tronco marrom
+        glColor3f(0.4, 0.2, 0.1)
+        glPushMatrix()
+        glTranslatef(0, 1, 0)
+        glScalef(0.3, 2, 0.3)
+        glutSolidCube(1.0)
+        glPopMatrix()
+        
+        # 3 níveis de copa com neve
+        for level in range(3):
+            # Copa verde escura (base)
+            glColor3f(0.05, 0.2, 0.05)  # Verde bem escuro
+            glPushMatrix()
+            glTranslatef(0, 2.5 + level * 0.8, 0)
+            scale = 1.5 - (level * 0.3)
+            glScalef(scale, 0.8, scale)
+            glutSolidCone(1.0, 1.0, 6, 1)
+            glPopMatrix()
+            
+            # Neve por cima
+            glColor3f(0.95, 0.95, 1.0)  # Branco neve
+            glPushMatrix()
+            glTranslatef(0, 2.9 + level * 0.8, 0)
+            scale_snow = (1.5 - (level * 0.3)) * 0.8
+            glScalef(scale_snow, 0.3, scale_snow)
+            glutSolidCone(1.0, 1.0, 6, 1)
+            glPopMatrix()
+
+    def draw_polar_bear(self):
+        """Desenha um urso polar simples"""
+        glColor3f(0.95, 0.95, 0.98)  # Branco levemente amarelado
+        
+        # Corpo principal
+        glPushMatrix()
+        glTranslatef(0, 0.8, 0)
+        glScalef(1.2, 0.8, 2.0)
+        glutSolidCube(1.0)
+        glPopMatrix()
+        
+        # Cabeça
+        glPushMatrix()
+        glTranslatef(0, 1.2, 1.2)
+        glScalef(0.8, 0.7, 0.8)
+        glutSolidCube(1.0)
+        glPopMatrix()
+        
+        # Orelhas
+        ear_positions = [(-0.3, 1.5, 1.2), (0.3, 1.5, 1.2)]
+        for ex, ey, ez in ear_positions:
+            glPushMatrix()
+            glTranslatef(ex, ey, ez)
+            glutSolidSphere(0.15, 4, 3)
+            glPopMatrix()
+        
+        # Patas
+        paw_positions = [(-0.4, 0.2, 0.6), (0.4, 0.2, 0.6), (-0.4, 0.2, -0.6), (0.4, 0.2, -0.6)]
+        for px, py, pz in paw_positions:
+            glPushMatrix()
+            glTranslatef(px, py, pz)
+            glScalef(0.3, 0.4, 0.3)
+            glutSolidCube(1.0)
+            glPopMatrix()
+
+    def draw_igloo(self):
+        """Desenha um iglu simples"""
+        glColor3f(0.9, 0.9, 0.95)  # Branco gelo
+        
+        # Dome principal
+        glPushMatrix()
+        glTranslatef(0, 0.8, 0)
+        glScalef(1.0, 0.8, 1.0)
+        glutSolidSphere(1.0, 8, 6)
+        glPopMatrix()
+        
+        # Entrada (buraco escuro)
+        glColor3f(0.1, 0.1, 0.2)  # Azul muito escuro
+        glPushMatrix()
+        glTranslatef(0, 0.4, 0.9)
+        glScalef(0.4, 0.6, 0.2)
+        glutSolidCube(1.0)
+        glPopMatrix()
+
+    # ===== CENÁRIO VULCÃO =====
+    def draw_volcano_background(self):
+        """Desenha cenário vulcânico"""
+        self.draw_volcano_sky()
+        self.draw_volcano_mountains()
+        self.draw_volcano_ground()
+        self.draw_volcano_elements()
+
+    def draw_volcano_sky(self):
+        """Skybox vulcânico - céu avermelhado"""
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_FOG)
+        
+        glPushMatrix()
+        cam_x = self.game.ball.pos.x if hasattr(self.game, 'ball') else 0
+        cam_z = self.game.ball.pos.z if hasattr(self.game, 'ball') else 0
+        glTranslatef(cam_x, 0, cam_z)
+        
+        size = 80
+        glBegin(GL_QUADS)
+        
+        # Céu vulcânico - vermelho/laranja
+        glColor3f(0.8, 0.3, 0.1)  # Vermelho alaranjado
+        glVertex3f(-size, 0, -size)
+        glVertex3f(size, 0, -size)
+        glColor3f(0.4, 0.1, 0.1)   # Vermelho escuro
+        glVertex3f(size, size, -size)
+        glVertex3f(-size, size, -size)
+        
+        glColor3f(0.8, 0.3, 0.1)
+        glVertex3f(size, 0, size)
+        glVertex3f(-size, 0, size)
+        glColor3f(0.4, 0.1, 0.1)
+        glVertex3f(-size, size, size)
+        glVertex3f(size, size, size)
+        
+        glColor3f(0.8, 0.3, 0.1)
+        glVertex3f(-size, 0, -size)
+        glVertex3f(-size, 0, size)
+        glColor3f(0.4, 0.1, 0.1)
+        glVertex3f(-size, size, size)
+        glVertex3f(-size, size, -size)
+        
+        glColor3f(0.8, 0.3, 0.1)
+        glVertex3f(size, 0, size)
+        glVertex3f(size, 0, -size)
+        glColor3f(0.4, 0.1, 0.1)
+        glVertex3f(size, size, -size)
+        glVertex3f(size, size, size)
+        
+        glColor3f(0.3, 0.1, 0.1)
+        glVertex3f(-size, size, -size)
+        glVertex3f(size, size, -size)
+        glVertex3f(size, size, size)
+        glVertex3f(-size, size, size)
+        
+        glEnd()
+        glPopMatrix()
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_FOG)
+
+    def draw_volcano_mountains(self):
+        """Vulcões ao fundo"""
+        glDisable(GL_TEXTURE_2D)
+        glColor3f(0.3, 0.2, 0.2)  # Cinza escuro vulcânico
+        
+        volcanoes = [
+            [(-35, 0, -28), (-20, 20, -30), (-5, 0, -32)],  # Vulcão grande
+            [(10, 0, -35), (25, 16, -37), (40, 0, -39)],
+            [(45, 0, -25), (55, 12, -27), (65, 0, -29)],
+            [(-25, 0, 30), (-10, 14, 28), (5, 0, 26)],
+        ]
+        
+        for volcano in volcanoes:
+            glBegin(GL_TRIANGLES)
+            for point in volcano:
+                glVertex3f(*point)
+            glEnd()
+            
+        # Lava no topo dos vulcões
+        glColor3f(1.0, 0.3, 0.0)  # Laranja/vermelho para lava
+        lava_tops = [(-20, 20, -30), (25, 16, -37), (55, 12, -27), (-10, 14, 28)]
+        for x, y, z in lava_tops:
+            glPushMatrix()
+            glTranslatef(x, y, z)
+            glutSolidSphere(1.5, 6, 4)
+            glPopMatrix()
+
+    def draw_volcano_ground(self):
+        """Solo vulcânico"""
+        glColor3f(0.4, 0.2, 0.1)  # Marrom escuro rochoso
+        
+        field_size = Config.CAMPO_METADE
+        extended_size = 20.0
+        
+        regions = [
+            [(-extended_size, 0, field_size), (extended_size, 0, extended_size)],
+            [(-extended_size, 0, -extended_size), (extended_size, 0, -field_size)],
+            [(field_size, 0, -field_size), (extended_size, 0, field_size)],
+            [(-extended_size, 0, -field_size), (-field_size, 0, field_size)]
+        ]
+        
+        for (x1, y1, z1), (x2, y2, z2) in regions:
+            glBegin(GL_QUADS)
+            glVertex3f(x1, y1, z1)
+            glVertex3f(x2, y1, z1) 
+            glVertex3f(x2, y2, z2)
+            glVertex3f(x1, y2, z2)
+            glEnd()
+
+    def draw_volcano_elements(self):
+        """Elementos vulcânicos variados e reconhecíveis - MAIS PRÓXIMOS"""
+        
+        # Posições mistas para diferentes elementos
+        element_positions = [
+            (-9, 0, -7), (10, 0, -9), (-12, 0, 8), 
+            (11, 0, 10), (-7, 0, 12), (8, 0, 14),
+            (-8, 0, -11), (13, 0, -8), (-10, 0, -12),
+            (9, 0, -10), (7, 0, 13), (-11, 0, 9)
+        ]
+        
+        for i, (x, y, z) in enumerate(element_positions):
+            glPushMatrix()
+            glTranslatef(x, y, z)
+            
+            # Alterna entre diferentes elementos vulcânicos
+            element_type = i % 4
+            
+            if element_type == 0:  # Poça de lava
+                self.draw_lava_pool()
+            elif element_type == 1:  # Rocha vulcânica pontuda
+                self.draw_volcanic_spire()
+            elif element_type == 2:  # Cristal de obsidiana
+                self.draw_obsidian_crystal()
+            else:  # Gêiser de vapor
+                self.draw_volcanic_geyser()
+            
+            glPopMatrix()
+
+    def draw_lava_pool(self):
+        """Desenha uma poça de lava brilhante"""
+        # Aplicar textura de lava se disponível
+        if 'lava' in self.textures:
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, self.textures['lava'])
+        else:
+            glDisable(GL_TEXTURE_2D)
+        
+        # Cor brilhante da lava (laranja-vermelho)
+        glColor3f(1.0, 0.3, 0.1)
+        
+        # Poça circular achatada
+        glPushMatrix()
+        glTranslatef(0, 0.1, 0)
+        glScalef(2.0, 0.2, 2.0)
+        
+        # Desenha círculo de lava
+        glBegin(GL_TRIANGLE_FAN)
+        glTexCoord2f(0.5, 0.5)
+        glVertex3f(0, 0, 0)
+        
+        for i in range(17):  # 16 segmentos + 1 para fechar
+            angle = i * 2 * pi / 16
+            glTexCoord2f(0.5 + 0.5 * cos(angle), 0.5 + 0.5 * sin(angle))
+            glVertex3f(cos(angle), 0, sin(angle))
+        glEnd()
+        
+        glPopMatrix()
+        glDisable(GL_TEXTURE_2D)
+
+    def draw_volcanic_spire(self):
+        """Desenha uma rocha vulcânica pontuda"""
+        # Aplicar textura de rocha vulcânica se disponível
+        if 'volcanic_rock' in self.textures:
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, self.textures['volcanic_rock'])
+        else:
+            glDisable(GL_TEXTURE_2D)
+        
+        # Cor escura da rocha vulcânica
+        glColor3f(0.15, 0.1, 0.08)
+        
+        # Base da rocha (cubo deformado)
+        glPushMatrix()
+        glTranslatef(0, 0.5, 0)
+        glScalef(1.2, 1.0, 1.1)
+        glutSolidCube(1.0)
+        glPopMatrix()
+        
+        # Ponta pontuda (cone)
+        glPushMatrix()
+        glTranslatef(0, 1.2, 0)
+        glRotatef(180, 1, 0, 0)  # Inverte para ficar pontiagudo para cima
+        glutSolidCone(0.8, 1.5, 6, 1)
+        glPopMatrix()
+        
+        # Pequenas pontas laterais
+        for angle in [0, 120, 240]:
+            glPushMatrix()
+            glRotatef(angle, 0, 1, 0)
+            glTranslatef(0.6, 0.8, 0)
+            glRotatef(45, 1, 0, 0)
+            glutSolidCone(0.2, 0.6, 4, 1)
+            glPopMatrix()
+        
+        glDisable(GL_TEXTURE_2D)
+
+    def draw_obsidian_crystal(self):
+        """Desenha cristal de obsidiana brilhante"""
+        # Aplicar textura de obsidiana se disponível
+        if 'obsidian' in self.textures:
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, self.textures['obsidian'])
+        else:
+            glDisable(GL_TEXTURE_2D)
+        
+        # Cor preta brilhante
+        glColor3f(0.05, 0.05, 0.15)
+        
+        # Cristal principal (prisma alongado)
+        glPushMatrix()
+        glTranslatef(0, 1.5, 0)
+        glRotatef(15, 0, 1, 0)  # Rotação para parecer mais natural
+        glRotatef(10, 1, 0, 0)
+        glScalef(0.4, 3.0, 0.4)
+        glutSolidOctahedron()
+        glPopMatrix()
+        
+        # Cristais menores ao redor
+        small_crystal_positions = [
+            (0.8, 0.6, 0.2, 20), (-0.6, 0.8, -0.3, -15), 
+            (0.3, 0.4, 0.9, 45), (-0.4, 0.5, -0.7, -30)
+        ]
+        
+        for cx, cy, cz, rotation in small_crystal_positions:
+            glPushMatrix()
+            glTranslatef(cx, cy, cz)
+            glRotatef(rotation, 0, 1, 0)
+            glScalef(0.2, 1.2, 0.2)
+            glutSolidOctahedron()
+            glPopMatrix()
+        
+        glDisable(GL_TEXTURE_2D)
+
+    def draw_volcanic_geyser(self):
+        """Desenha gêiser vulcânico com vapor"""
+        # Base rochosa do gêiser
+        if 'molten_rock' in self.textures:
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, self.textures['molten_rock'])
+        else:
+            glDisable(GL_TEXTURE_2D)
+        
+        # Cor da rocha quente
+        glColor3f(0.3, 0.15, 0.1)
+        
+        # Base do gêiser
+        glPushMatrix()
+        glTranslatef(0, 0.3, 0)
+        glScalef(1.5, 0.6, 1.5)
+        glutSolidSphere(1.0, 8, 6)
+        glPopMatrix()
+        
+        glDisable(GL_TEXTURE_2D)
+        
+        # "Vapor" (cilindros semi-transparentes subindo)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glColor4f(0.9, 0.9, 0.9, 0.3)  # Branco semi-transparente
+        
+        # Colunas de vapor de diferentes alturas
+        vapor_heights = [2.5, 3.0, 2.8, 3.2, 2.6]
+        for i, height in enumerate(vapor_heights):
+            glPushMatrix()
+            glTranslatef(sin(i * 0.8) * 0.3, height/2 + 0.6, cos(i * 0.8) * 0.3)
+            scale = 0.3 - (i * 0.05)
+            glScalef(scale, height, scale)
+            glutSolidCube(1.0)
+            glPopMatrix()
+        
+        glDisable(GL_BLEND)
+
+    # ===== CENÁRIO ESPACIAL =====
+    def draw_space_background(self):
+        """Desenha cenário espacial"""
+        self.draw_space_sky()
+        self.draw_space_structures()
+        self.draw_space_ground()
+        self.draw_space_elements()
+
+    def draw_space_sky(self):
+        """Skybox espacial - preto com estrelas"""
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_FOG)
+        
+        glPushMatrix()
+        cam_x = self.game.ball.pos.x if hasattr(self.game, 'ball') else 0
+        cam_z = self.game.ball.pos.z if hasattr(self.game, 'ball') else 0
+        glTranslatef(cam_x, 0, cam_z)
+        
+        size = 80
+        
+        # Céu preto do espaço
+        glColor3f(0.05, 0.05, 0.15)  # Azul muito escuro
+        glBegin(GL_QUADS)
+        
+        glVertex3f(-size, 0, -size)
+        glVertex3f(size, 0, -size)
+        glVertex3f(size, size, -size)
+        glVertex3f(-size, size, -size)
+        
+        glVertex3f(size, 0, size)
+        glVertex3f(-size, 0, size)
+        glVertex3f(-size, size, size)
+        glVertex3f(size, size, size)
+        
+        glVertex3f(-size, 0, -size)
+        glVertex3f(-size, 0, size)
+        glVertex3f(-size, size, size)
+        glVertex3f(-size, size, -size)
+        
+        glVertex3f(size, 0, size)
+        glVertex3f(size, 0, -size)
+        glVertex3f(size, size, -size)
+        glVertex3f(size, size, size)
+        
+        glVertex3f(-size, size, -size)
+        glVertex3f(size, size, -size)
+        glVertex3f(size, size, size)
+        glVertex3f(-size, size, size)
+        
+        glEnd()
+        
+        # Estrelas
+        glColor3f(1.0, 1.0, 1.0)
+        glPointSize(2.0)
+        glBegin(GL_POINTS)
+        import random
+        random.seed(42)  # Seed fixo para estrelas consistentes
+        for _ in range(200):
+            x = random.uniform(-size, size)
+            y = random.uniform(0, size)
+            z = random.uniform(-size, size)
+            glVertex3f(x, y, z)
+        glEnd()
+        
+        glPopMatrix()
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_FOG)
+
+    def draw_space_structures(self):
+        """Estruturas espaciais distantes"""
+        glDisable(GL_TEXTURE_2D)
+        
+        # Estações espaciais
+        stations = [(-30, 15, -25), (35, 12, -30), (-25, 20, 30), (40, 18, 25)]
+        
+        glColor3f(0.6, 0.6, 0.7)  # Metálico
+        for x, y, z in stations:
+            glPushMatrix()
+            glTranslatef(x, y, z)
+            
+            # Estrutura principal
+            glScalef(4, 2, 8)
+            glutSolidCube(1.0)
+            
+            # Painéis solares
+            glColor3f(0.1, 0.1, 0.3)
+            glPushMatrix()
+            glTranslatef(0, 0, 5)
+            glScalef(6, 0.2, 2)
+            glutSolidCube(1.0)
+            glPopMatrix()
+            
+            glPopMatrix()
+
+    def draw_space_ground(self):
+        """Superfície metálica da estação"""
+        glColor3f(0.4, 0.4, 0.5)  # Cinza metálico
+        
+        field_size = Config.CAMPO_METADE
+        extended_size = 18.0
+        
+        regions = [
+            [(-extended_size, 0, field_size), (extended_size, 0, extended_size)],
+            [(-extended_size, 0, -extended_size), (extended_size, 0, -field_size)],
+            [(field_size, 0, -field_size), (extended_size, 0, field_size)],
+            [(-extended_size, 0, -field_size), (-field_size, 0, field_size)]
+        ]
+        
+        for (x1, y1, z1), (x2, y2, z2) in regions:
+            glBegin(GL_QUADS)
+            glVertex3f(x1, y1, z1)
+            glVertex3f(x2, y1, z1) 
+            glVertex3f(x2, y2, z2)
+            glVertex3f(x1, y2, z2)
+            glEnd()
+
+    def draw_space_elements(self):
+        """Elementos futurísticos - PRÓXIMOS"""
+        glDisable(GL_TEXTURE_2D)
+        
+        # Antenas e estruturas próximas
+        antenna_positions = [
+            (-8, 0, -6), (9, 0, -8), (-10, 0, 7), 
+            (8, 0, 9), (-6, 0, 11), (7, 0, 12),
+            (-9, 0, -9), (10, 0, -7)
+        ]
+        
+        for x, y, z in antenna_positions:
+            glPushMatrix()
+            glTranslatef(x, y, z)
+            
+            # Base
+            glColor3f(0.3, 0.3, 0.4)
+            glPushMatrix()
+            glTranslatef(0, 0.5, 0)
+            glScalef(1, 1, 1)
+            glutSolidCube(1.0)
+            glPopMatrix()
+            
+            # Antena
+            glColor3f(0.6, 0.6, 0.7)
+            glPushMatrix()
+            glTranslatef(0, 3, 0)
+            glScalef(0.2, 5, 0.2)
+            glutSolidCube(1.0)
+            glPopMatrix()
+            
+            # Luz no topo
+            glColor3f(0.0, 1.0, 1.0)  # Ciano
+            glTranslatef(0, 5.5, 0)
+            glutSolidSphere(0.3, 6, 4)
+            
+            glPopMatrix()
+
+    # ===== CENÁRIO PRAIA =====
+    def draw_beach_background(self):
+        """Desenha cenário de praia"""
+        self.draw_beach_sky()
+        self.draw_beach_horizon()
+        self.draw_beach_ground()
+        self.draw_beach_elements()
+
+    def draw_beach_sky(self):
+        """Skybox tropical"""
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_FOG)
+        
+        glPushMatrix()
+        cam_x = self.game.ball.pos.x if hasattr(self.game, 'ball') else 0
+        cam_z = self.game.ball.pos.z if hasattr(self.game, 'ball') else 0
+        glTranslatef(cam_x, 0, cam_z)
+        
+        size = 80
+        glBegin(GL_QUADS)
+        
+        # Céu tropical - azul claro
+        glColor3f(0.7, 0.9, 1.0)  # Azul tropical
+        glVertex3f(-size, 0, -size)
+        glVertex3f(size, 0, -size)
+        glColor3f(0.3, 0.7, 1.0)
+        glVertex3f(size, size, -size)
+        glVertex3f(-size, size, -size)
+        
+        glColor3f(0.7, 0.9, 1.0)
+        glVertex3f(size, 0, size)
+        glVertex3f(-size, 0, size)
+        glColor3f(0.3, 0.7, 1.0)
+        glVertex3f(-size, size, size)
+        glVertex3f(size, size, size)
+        
+        glColor3f(0.7, 0.9, 1.0)
+        glVertex3f(-size, 0, -size)
+        glVertex3f(-size, 0, size)
+        glColor3f(0.3, 0.7, 1.0)
+        glVertex3f(-size, size, size)
+        glVertex3f(-size, size, -size)
+        
+        glColor3f(0.7, 0.9, 1.0)
+        glVertex3f(size, 0, size)
+        glVertex3f(size, 0, -size)
+        glColor3f(0.3, 0.7, 1.0)
+        glVertex3f(size, size, -size)
+        glVertex3f(size, size, size)
+        
+        glColor3f(0.2, 0.6, 0.9)
+        glVertex3f(-size, size, -size)
+        glVertex3f(size, size, -size)
+        glVertex3f(size, size, size)
+        glVertex3f(-size, size, size)
+        
+        glEnd()
+        glPopMatrix()
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_FOG)
+
+    def draw_beach_horizon(self):
+        """Mar ao fundo"""
+        glDisable(GL_TEXTURE_2D)
+        glColor3f(0.2, 0.5, 0.8)  # Azul oceano
+        
+        # Oceano ao fundo
+        ocean_distance = 30
+        glBegin(GL_QUADS)
+        glVertex3f(-50, 0, ocean_distance)
+        glVertex3f(50, 0, ocean_distance)
+        glVertex3f(50, 5, ocean_distance + 20)
+        glVertex3f(-50, 5, ocean_distance + 20)
+        glEnd()
+
+    def draw_beach_ground(self):
+        """Areia da praia"""
+        glColor3f(0.9, 0.85, 0.7)  # Areia clara
+        
+        field_size = Config.CAMPO_METADE
+        extended_size = 20.0
+        
+        regions = [
+            [(-extended_size, 0, field_size), (extended_size, 0, extended_size)],
+            [(-extended_size, 0, -extended_size), (extended_size, 0, -field_size)],
+            [(field_size, 0, -field_size), (extended_size, 0, field_size)],
+            [(-extended_size, 0, -field_size), (-field_size, 0, field_size)]
+        ]
+        
+        for (x1, y1, z1), (x2, y2, z2) in regions:
+            glBegin(GL_QUADS)
+            glVertex3f(x1, y1, z1)
+            glVertex3f(x2, y1, z1) 
+            glVertex3f(x2, y2, z2)
+            glVertex3f(x1, y2, z2)
+            glEnd()
+
+    def draw_beach_elements(self):
+        """Palmeiras e elementos tropicais - PRÓXIMOS"""
+        glDisable(GL_TEXTURE_2D)
+        
+        # Palmeiras mais próximas
+        palm_positions = [
+            (-9, 0, -6), (10, 0, -8), (-11, 0, 8), 
+            (9, 0, 10), (-7, 0, 12), (8, 0, 11),
+            (-8, 0, -10), (11, 0, -9), (7, 0, 13)
+        ]
+        
+        for x, y, z in palm_positions:
+            glPushMatrix()
+            glTranslatef(x, y, z)
+            
+            # Tronco curvado
+            glColor3f(0.6, 0.4, 0.2)  # Marrom claro
+            glPushMatrix()
+            glTranslatef(0, 3, 0)
+            glRotatef(15, 1, 0, 0)  # Curva leve
+            glScalef(0.4, 6, 0.4)
+            glutSolidCube(1.0)
+            glPopMatrix()
+            
+            # Folhas no topo
+            glColor3f(0.2, 0.7, 0.2)  # Verde tropical
+            leaf_angles = [0, 60, 120, 180, 240, 300]
+            for angle in leaf_angles:
+                glPushMatrix()
+                glTranslatef(0, 6, 0)
+                glRotatef(angle, 0, 1, 0)
+                glTranslatef(1.5, 0, 0)
+                glScalef(3, 0.2, 0.8)
+                glutSolidCube(1.0)
+                glPopMatrix()
             
             glPopMatrix()
 
