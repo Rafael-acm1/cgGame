@@ -118,12 +118,28 @@ class Game:
                     if abs(self.ball.vel.y) < 0.01: self.ball.vel.y = 0
 
     def save_score(self):
-        os.makedirs(Config.DATA_DIR, exist_ok=True); data = {"scores": []}
+        os.makedirs(Config.DATA_DIR, exist_ok=True)
+        data = {"scores": []}
+        
+        # Try to load existing data with error handling
         if os.path.exists(Config.SCORE_FILE):
-            with open(Config.SCORE_FILE) as f: data = json.load(f)
+            try:
+                with open(Config.SCORE_FILE) as f:
+                    data = json.load(f)
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"Warning: Could not load scores file: {e}")
+                print("Creating new scores file...")
+                data = {"scores": []}
+        
         score_entry = {"level": self.level_files[self.level_index], "shots": self.shots}
         data.setdefault("scores", []).append(score_entry)
-        with open(Config.SCORE_FILE, "w") as f: json.dump(data, f, indent=2)
+        
+        # Try to save with error handling
+        try:
+            with open(Config.SCORE_FILE, "w") as f:
+                json.dump(data, f, indent=2)
+        except IOError as e:
+            print(f"Warning: Could not save scores file: {e}")
 
     def start_shooting(self):
         if self.ball.horizontal_speed() > 0.01 or self.won: return

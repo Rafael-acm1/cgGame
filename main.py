@@ -15,14 +15,12 @@ def init_gl():
     glClearColor(0.6, 0.85, 1.0, 1.0)
     glShadeModel(GL_SMOOTH)
     
-    # Habilita fog/neblina para dar profundidade ao cenário
+    # Configuração básica do fog
     glEnable(GL_FOG)
     glFogi(GL_FOG_MODE, GL_LINEAR)
-    glFogfv(GL_FOG_COLOR, [0.6, 0.85, 1.0, 1.0])  # Cor da neblina (azul claro como o céu)
-    glFogf(GL_FOG_DENSITY, 0.02)
-    glFogf(GL_FOG_START, 20.0)    # Neblina começa aos 20 units de distância
-    glFogf(GL_FOG_END, 50.0)      # Completamente nebuloso aos 50 units
-    glHint(GL_FOG_HINT, GL_NICEST)
+    glFogf(GL_FOG_START, 20.0)
+    glFogf(GL_FOG_END, 60.0)
+    glFogfv(GL_FOG_COLOR, (0.6, 0.85, 1.0, 1.0))
 
 def reshape(w, h):
     Config.WINDOW_SIZE = (w, h)
