@@ -339,6 +339,54 @@
     {
       "level": "level4.json",
       "shots": 2
+    },
+    {
+      "level": "level1.json",
+      "shots": 1
+    },
+    {
+      "level": "level2.json",
+      "shots": 1
+    },
+    {
+      "level": "level3.json",
+      "shots": 2
+    },
+    {
+      "level": "level1.json",
+      "shots": 2
+    },
+    {
+      "level": "level2.json",
+      "shots": 1
+    },
+    {
+      "level": "level1.json",
+      "shots": 1
+    },
+    {
+      "level": "level2.json",
+      "shots": 1
+    },
+    {
+      "level": "level1.json",
+      "shots": 1
+    },
+    {
+      "level": "level2.json",
+      "shots": 1
+    },
+    {
+      "level": "level1.json",
+      "shots": 1
+    },
+    {
+      "level": "level2.json",
+      "shots": 1
+    },
+    {
+      "level": "level3.json",
+      "shots": 3
     }
   ]
 }

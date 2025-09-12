@@ -25,7 +25,7 @@ class Config:
     # Aumentamos a gravidade para compensar o DT menor.
     FORCA_GRAVIDADE = 9.8 * 1.5
     
-    RESTITUICAO_SOLO = 0.45
+    RESTITUICAO_SOLO = 0.9
 
     FORCA_MAXIMA = 1.5
     FORCA_MINIMA = 0.05
