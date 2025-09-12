@@ -1,12 +1,7 @@
-# Arquivo: utils/inputs.py
-# VERSÃO COM A ORDEM DOS ARGUMENTOS CORRIGIDA
-
 import sys
 from OpenGL.GLUT import *
 from math import atan2, degrees
 from OpenGL.GLU import gluUnProject
-
-# Imports específicos de GL
 from OpenGL.GL import (
     glGetDoublev,
     glGetIntegerv,
@@ -48,17 +43,11 @@ def keyboard_up(key, x, y, game, sounds):
         game.shoot()
 
 def special_keys(key, x, y, game):
-    """Lida com teclas especiais (setas, F1, etc.)."""
     if game.SCREEN_STATE != 1: return
-
     if key == GLUT_KEY_LEFT:
         game.aim_angle = (game.aim_angle + 5.0) % 360
     elif key == GLUT_KEY_RIGHT:
         game.aim_angle = (game.aim_angle - 5.0) % 360
-    elif key == GLUT_KEY_UP:
-        game.shot_power = min(1.5, game.shot_power + 0.03)
-    elif key == GLUT_KEY_DOWN:
-        game.shot_power = max(0.05, game.shot_power - 0.03)
 
 def mouse(button, state, x, y):
     global mouse_pressed, mouse_last_x, mouse_last_y

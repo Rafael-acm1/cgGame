@@ -27,7 +27,6 @@ class Renderer:
         self.menu_buttons = []
         self._ui_prev_depth = None
 
-    
     def initialize_textures(self):
         self.textures['grass'] = load_texture("assets/textures/grass.png")
         
@@ -109,31 +108,15 @@ class Renderer:
 
     def draw_ui(self):
         w, h = Config.WINDOW_SIZE
-        glMatrixMode(GL_PROJECTION)
-        glPushMatrix(); glLoadIdentity()
-        gluOrtho2D(0, w, 0, h)
-        glMatrixMode(GL_MODELVIEW)
-        glPushMatrix(); glLoadIdentity()
-        
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_LIGHTING)
-        glColor3f(0.0, 0.0, 0.0)
-        def write_text(x, y, text):
-            glRasterPos2f(x, y)
-            for ch in text:
-                glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(ch))
-        
         mode = self.game.camera.mode()
         status = "VENCEU!" if self.game.won else ""
-        write_text(10, h-30, f"Setas: mira/forca | Espaco: tacada | C: camera({mode}) | R: reset | ESC: MENU")
-        write_text(10, h-55, f"Level: {self.game.level_index + 1} | Forca: {self.game.shot_power:.2f} | Angulo: {self.game.aim_angle:.1f} | Tacadas: {self.game.shots} | {status}")
-        
-        glEnable(GL_DEPTH_TEST)
-        glMatrixMode(GL_MODELVIEW)
-        glPopMatrix()
-        glMatrixMode(GL_PROJECTION)
-        glPopMatrix()
-        glMatrixMode(GL_MODELVIEW)
+        commands = f"Mouse: mira | Espaco: tacada | C: camera({mode}) | R: reset | ESC: MENU"
+        infos = f"Level: {self.game.level_index + 1} | Angulo: {self.game.aim_angle:.1f} | Tacadas: {self.game.shots} | {status}"
+
+        ui.begin_2d(w, h) # Prepara o modo 2D
+        ui.draw_text(10, h-30, commands, color=(0,0,0,1))
+        ui.draw_text(10, h-55, infos, color=(0,0,0,1))
+        ui.end_2d() # Restaura o modo 3D
 
     def render_game(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -174,18 +157,7 @@ class Renderer:
         x = (w - bar_w) // 2
         y = margin
 
-        glMatrixMode(GL_PROJECTION)
-        glPushMatrix()
-        glLoadIdentity()
-        glOrtho(0, w, 0, h, -1, 1)
-
-        glMatrixMode(GL_MODELVIEW)
-        glPushMatrix()
-        glLoadIdentity()
-
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_LIGHTING)
-
+        ui.begin_2d(w, h)
         ui.draw_rect(x, y, bar_w, bar_h, color=(0,0,0,0.65))
         ui.draw_rect_outline(x, y, bar_w, bar_h, color=(1,1,1,0.9), width=2)
 
@@ -199,39 +171,17 @@ class Renderer:
         glVertex2f(mid_x, y + bar_h)
         glEnd()
 
-        glEnable(GL_DEPTH_TEST)
-        glMatrixMode(GL_MODELVIEW)
-        glPopMatrix()
-        glMatrixMode(GL_PROJECTION)
-        glPopMatrix()
-        glMatrixMode(GL_MODELVIEW)
+        ui.end_2d()
 
     def render_menu(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         w = glutGet(GLUT_WINDOW_WIDTH)
         h = glutGet(GLUT_WINDOW_HEIGHT)
 
-        glMatrixMode(GL_PROJECTION)
-        glPushMatrix()
-        glLoadIdentity()
-        glOrtho(0, w, 0, h, -1, 1)
-        glMatrixMode(GL_MODELVIEW)
-        glPushMatrix()
-        glLoadIdentity()
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_LIGHTING)
-        
-        titulo = "CGolf"
-        def text_width(txt):
-            return sum(glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, ord(c)) for c in txt)
-
-        def draw_text(x, y, txt):
-            glRasterPos2f(x, y)
-            for c in txt:
-                glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(c))
-
-        tw = text_width(titulo)
-        draw_text((w - tw)//2, h - 100, titulo)
+        ui.begin_2d(w, h)
+        titulo = "Mini Golf 3D"
+        tw = ui.text_width(titulo)
+        ui.draw_text((w - tw)//2, h - 100, titulo)
         
         btn_w, btn_h = 220, 60
         btn_x = (w - btn_w)//2
@@ -246,19 +196,9 @@ class Renderer:
             "h": btn_h
         }]
 
-        ui.draw_rect(btn_x, btn_y, btn_w, btn_h, color=(0,0,0,0.55))
-        ui.draw_rect_outline(btn_x, btn_y, btn_w, btn_h, color=(1,1,1,0.9), width=2)
-        label = "Iniciar Jogo"
-        lw = text_width(label)
-        lh = 18
-        draw_text(btn_x + (btn_w - lw)//2, btn_y + (btn_h - lh)//2 + 6, label)
-
-        glEnable(GL_DEPTH_TEST)
-        glMatrixMode(GL_MODELVIEW)
-        glPopMatrix()
-        glMatrixMode(GL_PROJECTION)
-        glPopMatrix()
-        glMatrixMode(GL_MODELVIEW)
+        button = self.menu_buttons[0]
+        ui.draw_button(button['x'], button['y'], button['w'], button['h'], button['label'])
+        ui.end_2d()
         glutSwapBuffers()
 
     def on_mouse(self, button, state, x, y):
