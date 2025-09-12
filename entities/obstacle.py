@@ -84,3 +84,28 @@ class Ramp:
             vel_z_rampa = cos(radians(self.rotation_y)) * forca_deslizamento * Config.DT
             ball.vel.x += vel_x_rampa
             ball.vel.z += vel_z_rampa
+
+@dataclass
+class WaterObstacle:
+    cx: float; cz: float; sx: float; sz: float; type: str = "water"
+    
+    def draw(self):
+        # Desenha água com cor azul transparente
+        glPushMatrix()
+        glColor4f(0.0, 0.4, 0.8, 0.6)  # Azul translúcido
+        glTranslatef(self.cx, 0.002, self.cz)  # Ligeiramente acima do chão
+        glBegin(GL_QUADS)
+        glVertex3f(-self.sx, 0, -self.sz)
+        glVertex3f( self.sx, 0, -self.sz)
+        glVertex3f( self.sx, 0,  self.sz)
+        glVertex3f(-self.sx, 0,  self.sz)
+        glEnd()
+        glPopMatrix()
+    
+    def collide_ball(self, ball: Ball):
+        # Verifica se a bola está sobre a área de água
+        if (self.cx - self.sx <= ball.pos.x <= self.cx + self.sx and
+            self.cz - self.sz <= ball.pos.z <= self.cz + self.sz and
+            ball.pos.y <= ball.radius + 0.1):  # Próximo ao nível da água
+            return "water_collision"  # Sinal especial para o Game processar
+        return None

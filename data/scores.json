@@ -387,6 +387,14 @@
     {
       "level": "level3.json",
       "shots": 3
+    },
+    {
+      "level": "level1.json",
+      "shots": 2
+    },
+    {
+      "level": "level2.json",
+      "shots": 6
     }
   ]
 }

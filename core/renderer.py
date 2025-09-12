@@ -92,8 +92,20 @@ class Renderer:
         glPopMatrix()
 
     def draw_obstacles(self):
+        # Primeiro desenha obstáculos sólidos
         for o in self.game.obstacles:
-            o.draw()
+            if getattr(o, 'type', '') != 'water':
+                o.draw()
+        
+        # Depois desenha obstáculos de água com transparência
+        has_water = any(getattr(o, 'type', '') == 'water' for o in self.game.obstacles)
+        if has_water:
+            glEnable(GL_BLEND)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            for o in self.game.obstacles:
+                if getattr(o, 'type', '') == 'water':
+                    o.draw()
+            glDisable(GL_BLEND)
 
     def draw_ui(self):
         w, h = Config.WINDOW_SIZE

@@ -5,7 +5,7 @@ from OpenGL.GLUT import glutTimerFunc
 from config import Config
 from entities.vec2 import Vec2
 from entities.ball import Ball
-from entities.obstacle import BoxObstacle, Ramp 
+from entities.obstacle import BoxObstacle, Ramp, WaterObstacle 
 from entities.camera import Camera
 from core.renderer import Renderer
 
@@ -33,11 +33,15 @@ class Game:
         
         pos_inicial = Vec2(x=ball_start_data[0], y=Config.ALTURA_INICIAL_BOLA, z=ball_start_data[1])
         self.ball = Ball(pos=pos_inicial, vel=Vec2(0, 0, 0))
+        # Salva posição inicial para reset em caso de queda na água
+        self.ball_initial_position = Vec2(x=ball_start_data[0], y=Config.ALTURA_INICIAL_BOLA, z=ball_start_data[1])
 
         self.obstacles = []
         for data in obstacles_data:
             if data.get("type") == "ramp":
                 self.obstacles.append(Ramp(**data))
+            elif data.get("type") == "water":
+                self.obstacles.append(WaterObstacle(**data))
             else: 
                 self.obstacles.append(BoxObstacle(**data))
 
@@ -48,12 +52,31 @@ class Game:
         self.aim_angle = 25.0; self.shot_power = 0.35; self.shots = 0
         self.won = False; self.isShooting = False
     
+    def reset_ball_to_start(self):
+        """Reseta a bola para a posição inicial quando toca na água"""
+        self.ball.pos.x = self.ball_initial_position.x
+        self.ball.pos.y = self.ball_initial_position.y
+        self.ball.pos.z = self.ball_initial_position.z
+        self.ball.vel.x = 0.0
+        self.ball.vel.y = 0.0
+        self.ball.vel.z = 0.0
+        # Toca som de splash
+        if self.sounds.get("water_splash"):
+            self.sounds["water_splash"].play()
+    
     def reset(self): self.load_level(self.level_index)
     def next_level(self): self.load_level(self.level_index + 1)
 
     def update_physics(self):
         if self.won: return
-        for obstacle in self.obstacles: obstacle.collide_ball(self.ball)
+        
+        # Verifica colisões com obstáculos
+        for obstacle in self.obstacles:
+            collision_result = obstacle.collide_ball(self.ball)
+            # Se a bola tocou na água, reseta posição
+            if collision_result == "water_collision":
+                self.reset_ball_to_start()
+                return
 
         self.ball.update(Config.DT)
 
