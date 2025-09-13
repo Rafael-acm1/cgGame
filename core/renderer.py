@@ -106,6 +106,7 @@ class Renderer:
         glPushMatrix()
         glTranslatef(b.pos.x, b.radius + 0.05, b.pos.z)
         glRotatef(self.game.aim_angle, 0.0, 1.0, 0.0)
+        glRotatef(-self.game.angle_vertical, 1.0, 0.0, 0.0)
         glColor3f(1.0, 0.0, 0.0)
         glBegin(GL_LINES)
         glVertex3f(0.0, 0.0, 0.0)
