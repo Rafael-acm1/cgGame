@@ -55,6 +55,10 @@ class Renderer:
         
     def initialize_textures(self):
         self.textures['grass'] = load_texture("assets/textures/grass.png")
+        self.textures['snow'] = load_texture("assets/textures/snow.png")
+        self.textures['sand'] = load_texture("assets/textures/sand.png")
+        self.textures['beachSand'] = load_texture("assets/textures/beachSand.png")
+        self.textures['grass2'] = load_texture("assets/textures/grass2.png")
         
     def draw_ground(self):
         if 'grass' in self.textures:
