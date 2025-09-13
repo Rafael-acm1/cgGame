@@ -77,7 +77,6 @@ class DesertScenario(BaseScenario):
         for (x1, y1, z1), (x2, y2, z2) in regions:
             glBegin(GL_QUADS)
             if use_texture:
-                # Coordenadas de textura simples e repetitivas
                 texture_repeat = 3.0  # Quantas vezes a textura vai repetir (maior para mais detalhes na areia)
                 glTexCoord2f(0, 0); glVertex3f(x1, y1, z1)
                 glTexCoord2f(texture_repeat, 0); glVertex3f(x2, y1, z1) 

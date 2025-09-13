@@ -115,6 +115,130 @@
     {
       "level": "level6.json",
       "shots": 5
+    },
+    {
+      "level": "level1.json",
+      "shots": 3
+    },
+    {
+      "level": "level2.json",
+      "shots": 3
+    },
+    {
+      "level": "level3.json",
+      "shots": 2
+    },
+    {
+      "level": "level4.json",
+      "shots": 3
+    },
+    {
+      "level": "level5.json",
+      "shots": 2
+    },
+    {
+      "level": "level6.json",
+      "shots": 2
+    },
+    {
+      "level": "level7.json",
+      "shots": 5
+    },
+    {
+      "level": "level8.json",
+      "shots": 2
+    },
+    {
+      "level": "level1.json",
+      "shots": 3
+    },
+    {
+      "level": "level2.json",
+      "shots": 3
+    },
+    {
+      "level": "level3.json",
+      "shots": 2
+    },
+    {
+      "level": "level4.json",
+      "shots": 2
+    },
+    {
+      "level": "level1.json",
+      "shots": 2
+    },
+    {
+      "level": "level2.json",
+      "shots": 3
+    },
+    {
+      "level": "level3.json",
+      "shots": 1
+    },
+    {
+      "level": "level1.json",
+      "shots": 4
+    },
+    {
+      "level": "level2.json",
+      "shots": 3
+    },
+    {
+      "level": "level3.json",
+      "shots": 4
+    },
+    {
+      "level": "level4.json",
+      "shots": 3
+    },
+    {
+      "level": "level1.json",
+      "shots": 3
+    },
+    {
+      "level": "level2.json",
+      "shots": 3
+    },
+    {
+      "level": "level3.json",
+      "shots": 2
+    },
+    {
+      "level": "level4.json",
+      "shots": 2
+    },
+    {
+      "level": "level5.json",
+      "shots": 2
+    },
+    {
+      "level": "level1.json",
+      "shots": 2
+    },
+    {
+      "level": "level2.json",
+      "shots": 3
+    },
+    {
+      "level": "level3.json",
+      "shots": 4
+    },
+    {
+      "level": "level4.json",
+      "shots": 2
+    },
+    {
+      "level": "level5.json",
+      "shots": 2
+    },
+    {
+      "level": "level1.json",
+      "shots": 3
+    },
+    {
+      "level": "level1.json",
+      "shots": 4
     }
   ]
 }

@@ -73,7 +73,6 @@ class Game:
         # Verifica colisões com obstáculos
         for obstacle in self.obstacles:
             collision_result = obstacle.collide_ball(self.ball)
-            # Se a bola tocou na água, reseta posição
             if collision_result == "water_collision":
                 self.reset_ball_to_start()
                 return

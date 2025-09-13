@@ -49,6 +49,21 @@ class Renderer:
             
         return self.current_scenario
     
+    def get_field_texture(self):
+        level_index = self.game.level_index
+        num_scenarios = len(self.scenarios)
+        scenario_index = level_index % num_scenarios
+
+        texture_mapping = {
+            0: 'snow',     
+            1: 'sand',      
+            2: 'beachSand', 
+            3: 'grass2',    
+        }
+        
+        texture_name = texture_mapping.get(scenario_index, 'grass')
+        return texture_name if texture_name in self.textures else 'grass'
+    
     def draw_scenario_background(self):
         scenario = self.get_current_scenario()
         scenario.draw()
@@ -59,11 +74,16 @@ class Renderer:
         self.textures['sand'] = load_texture("assets/textures/sand.png")
         self.textures['beachSand'] = load_texture("assets/textures/beachSand.png")
         self.textures['grass2'] = load_texture("assets/textures/grass2.png")
+        self.textures['rock'] = load_texture("assets/textures/rock.png")
+        self.textures['cacto'] = load_texture("assets/textures/cacto.png")
         
     def draw_ground(self):
-        if 'grass' in self.textures:
+        # Obter a textura apropriada para o cenário atual
+        field_texture = self.get_field_texture()
+        
+        if field_texture in self.textures:
             glEnable(GL_TEXTURE_2D)
-            glBindTexture(GL_TEXTURE_2D, self.textures['grass']) 
+            glBindTexture(GL_TEXTURE_2D, self.textures[field_texture]) 
             glColor3f(1,1,1)
             glBegin(GL_QUADS)
             s = Config.CAMPO_METADE / 2.0
@@ -74,13 +94,477 @@ class Renderer:
             glEnd()
             glDisable(GL_TEXTURE_2D)
         else: 
-            glColor3f(0.05, 0.55, 0.15)
+            # Cores de fallback baseadas no cenário
+            level_index = self.game.level_index
+            scenario_index = level_index % len(self.scenarios)
+            
+            fallback_colors = {
+                0: (0.92, 0.92, 0.96),  # Snow - branco acinzentado
+                1: (0.9, 0.8, 0.5),     # Desert - amarelo areia
+                2: (0.9, 0.85, 0.7),    # Beach - bege claro
+                3: (0.1, 0.4, 0.1),     # Forest - verde escuro
+            }
+            
+            color = fallback_colors.get(scenario_index, (0.05, 0.55, 0.15))
+            glColor3f(*color)
             glBegin(GL_QUADS)
             glVertex3f(-Config.CAMPO_METADE, 0.0, -Config.CAMPO_METADE)
             glVertex3f( Config.CAMPO_METADE, 0.0, -Config.CAMPO_METADE)
             glVertex3f( Config.CAMPO_METADE, 0.0,  Config.CAMPO_METADE)
             glVertex3f(-Config.CAMPO_METADE, 0.0,  Config.CAMPO_METADE)
             glEnd()
+
+    def draw_field_borders(self):
+        """Desenha bordas temáticas criativas para delimitar a área de jogo"""
+        level_index = self.game.level_index
+        scenario_index = level_index % len(self.scenarios)
+        
+        field_size = Config.CAMPO_METADE
+        border_width = 0.3
+        border_height = 0.15
+        
+        glDisable(GL_TEXTURE_2D)
+        
+        if scenario_index == 0:  # Snow Scenario - Cercas de madeira com neve
+            self._draw_snow_borders(field_size, border_width, border_height)
+        elif scenario_index == 1:  # Desert Scenario - Muros de pedra do deserto
+            self._draw_desert_borders(field_size, border_width, border_height)
+        elif scenario_index == 2:  # Beach Scenario - Troncos de palmeira
+            self._draw_beach_borders(field_size, border_width, border_height)
+        elif scenario_index == 3:  # Forest Scenario - Cerca viva de arbustos
+            self._draw_forest_borders(field_size, border_width, border_height)
+    
+    def _draw_snow_borders(self, field_size, width, height):
+        """Cerca de madeira coberta de neve"""
+        # Cor da madeira
+        glColor3f(0.4, 0.2, 0.1)
+        
+        # Postes verticais nas bordas
+        post_positions = [
+            # Borda Norte
+            [(-field_size, 0, field_size), (field_size, 0, field_size)],
+            # Borda Sul  
+            [(-field_size, 0, -field_size), (field_size, 0, -field_size)],
+            # Borda Leste
+            [(field_size, 0, -field_size), (field_size, 0, field_size)],
+            # Borda Oeste
+            [(-field_size, 0, -field_size), (-field_size, 0, field_size)]
+        ]
+        
+        for start, end in post_positions:
+            # Calcula o número de postes baseado na distância
+            distance = ((end[0] - start[0])**2 + (end[2] - start[2])**2)**0.5
+            num_posts = int(distance / 1.5) + 1
+            
+            for i in range(num_posts):
+                t = i / max(1, num_posts - 1)
+                x = start[0] + t * (end[0] - start[0])
+                z = start[2] + t * (end[2] - start[2])
+                
+                # Poste de madeira
+                glPushMatrix()
+                glTranslatef(x, height, z)
+                glScalef(0.1, height * 2, 0.1)
+                glutSolidCube(1.0)
+                glPopMatrix()
+                
+                # Neve no topo do poste
+                glColor3f(0.95, 0.95, 1.0)
+                glPushMatrix()
+                glTranslatef(x, height * 1.8, z)
+                glutSolidSphere(0.08, 6, 4)
+                glPopMatrix()
+                glColor3f(0.4, 0.2, 0.1)
+        
+        # Ripas horizontais conectando os postes
+        glColor3f(0.35, 0.15, 0.05)
+        self._draw_horizontal_fence_rails(field_size, height)
+    
+    def _draw_desert_borders(self, field_size, width, height):
+        """Cactos pequenos formando a borda do deserto"""
+        
+        # Verifica se a textura de cacto está disponível
+        use_cactus_texture = hasattr(self, 'textures') and 'cacto' in self.textures
+        
+        if use_cactus_texture:
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, self.textures['cacto'])
+            glColor3f(1.0, 1.0, 1.0)  # Branco para não alterar a textura
+        else:
+            glDisable(GL_TEXTURE_2D)
+            glColor3f(0.2, 0.5, 0.2)  # Cor verde escura para os cactos como fallback
+        
+        # Espaçamento entre cactos
+        cactus_spacing = 1.2
+        
+        def draw_textured_cactus_cube():
+            """Desenha um cubo com coordenadas de textura para cactos"""
+            if use_cactus_texture:
+                glBegin(GL_QUADS)
+                # Face frontal
+                glTexCoord2f(0, 0); glVertex3f(-0.5, -0.5,  0.5)
+                glTexCoord2f(1, 0); glVertex3f( 0.5, -0.5,  0.5)
+                glTexCoord2f(1, 1); glVertex3f( 0.5,  0.5,  0.5)
+                glTexCoord2f(0, 1); glVertex3f(-0.5,  0.5,  0.5)
+                
+                # Face traseira
+                glTexCoord2f(1, 0); glVertex3f(-0.5, -0.5, -0.5)
+                glTexCoord2f(1, 1); glVertex3f(-0.5,  0.5, -0.5)
+                glTexCoord2f(0, 1); glVertex3f( 0.5,  0.5, -0.5)
+                glTexCoord2f(0, 0); glVertex3f( 0.5, -0.5, -0.5)
+                
+                # Face superior
+                glTexCoord2f(0, 1); glVertex3f(-0.5,  0.5, -0.5)
+                glTexCoord2f(0, 0); glVertex3f(-0.5,  0.5,  0.5)
+                glTexCoord2f(1, 0); glVertex3f( 0.5,  0.5,  0.5)
+                glTexCoord2f(1, 1); glVertex3f( 0.5,  0.5, -0.5)
+                
+                # Face inferior
+                glTexCoord2f(1, 1); glVertex3f(-0.5, -0.5, -0.5)
+                glTexCoord2f(0, 1); glVertex3f( 0.5, -0.5, -0.5)
+                glTexCoord2f(0, 0); glVertex3f( 0.5, -0.5,  0.5)
+                glTexCoord2f(1, 0); glVertex3f(-0.5, -0.5,  0.5)
+                
+                # Face direita
+                glTexCoord2f(1, 0); glVertex3f( 0.5, -0.5, -0.5)
+                glTexCoord2f(1, 1); glVertex3f( 0.5,  0.5, -0.5)
+                glTexCoord2f(0, 1); glVertex3f( 0.5,  0.5,  0.5)
+                glTexCoord2f(0, 0); glVertex3f( 0.5, -0.5,  0.5)
+                
+                # Face esquerda
+                glTexCoord2f(0, 0); glVertex3f(-0.5, -0.5, -0.5)
+                glTexCoord2f(1, 0); glVertex3f(-0.5, -0.5,  0.5)
+                glTexCoord2f(1, 1); glVertex3f(-0.5,  0.5,  0.5)
+                glTexCoord2f(0, 1); glVertex3f(-0.5,  0.5, -0.5)
+                glEnd()
+            else:
+                glutSolidCube(1.0)
+        
+        def draw_small_cactus(scale=1.0):
+            """Desenha um cacto pequeno com corpo principal e braços laterais"""
+            # Corpo principal do cacto
+            glPushMatrix()
+            glTranslatef(0, 0.5 * scale, 0)
+            glScalef(0.15 * scale, 1.0 * scale, 0.15 * scale)
+            draw_textured_cactus_cube()
+            glPopMatrix()
+            
+            # Braço esquerdo (nem todos os cactos têm)
+            if scale > 0.6:  # Só cactos maiores têm braços
+                glPushMatrix()
+                glTranslatef(-0.2 * scale, 0.6 * scale, 0)
+                glScalef(0.1 * scale, 0.6 * scale, 0.1 * scale)
+                draw_textured_cactus_cube()
+                glPopMatrix()
+                
+                # Extensão horizontal do braço esquerdo
+                glPushMatrix()
+                glTranslatef(-0.35 * scale, 0.6 * scale, 0)
+                glScalef(0.2 * scale, 0.1 * scale, 0.1 * scale)
+                draw_textured_cactus_cube()
+                glPopMatrix()
+            
+            # Braço direito (opcional, só em alguns cactos)
+            if scale > 0.8:
+                glPushMatrix()
+                glTranslatef(0.18 * scale, 0.4 * scale, 0)
+                glScalef(0.08 * scale, 0.4 * scale, 0.08 * scale)
+                draw_textured_cactus_cube()
+                glPopMatrix()
+        
+        # Usar semente fixa para consistência
+        import random
+        random.seed(123)
+        
+        # Borda Norte
+        x = -field_size - width
+        while x <= field_size + width:
+            scale_factor = 0.5 + random.random() * 0.5  # Entre 0.5 e 1.0
+            x_offset = (random.random() - 0.5) * 0.3
+            z_offset = (random.random() - 0.5) * 0.2
+            
+            glPushMatrix()
+            glTranslatef(x + x_offset, 0, field_size + width/2 + z_offset)
+            draw_small_cactus(scale_factor)
+            glPopMatrix()
+            x += cactus_spacing
+            
+        # Borda Sul
+        x = -field_size - width
+        while x <= field_size + width:
+            scale_factor = 0.5 + random.random() * 0.5
+            x_offset = (random.random() - 0.5) * 0.3
+            z_offset = (random.random() - 0.5) * 0.2
+            
+            glPushMatrix()
+            glTranslatef(x + x_offset, 0, -field_size - width/2 + z_offset)
+            draw_small_cactus(scale_factor)
+            glPopMatrix()
+            x += cactus_spacing
+            
+        # Borda Leste
+        z = -field_size - width
+        while z <= field_size + width:
+            scale_factor = 0.5 + random.random() * 0.5
+            x_offset = (random.random() - 0.5) * 0.2
+            z_offset = (random.random() - 0.5) * 0.3
+            
+            glPushMatrix()
+            glTranslatef(field_size + width/2 + x_offset, 0, z + z_offset)
+            draw_small_cactus(scale_factor)
+            glPopMatrix()
+            z += cactus_spacing
+            
+        # Borda Oeste
+        z = -field_size - width
+        while z <= field_size + width:
+            scale_factor = 0.5 + random.random() * 0.5
+            x_offset = (random.random() - 0.5) * 0.2
+            z_offset = (random.random() - 0.5) * 0.3
+            
+            glPushMatrix()
+            glTranslatef(-field_size - width/2 + x_offset, 0, z + z_offset)
+            draw_small_cactus(scale_factor)
+            glPopMatrix()
+            z += cactus_spacing
+            
+        # Desabilita a textura de cacto antes de desenhar as pedras
+        if use_cactus_texture:
+            glDisable(GL_TEXTURE_2D)
+            
+        # Adiciona algumas pedras do deserto espalhadas
+        glColor3f(0.7, 0.6, 0.4)  # Cor de pedra do deserto
+        desert_rocks = [
+            (-field_size - 0.4, 0, field_size + 0.3),
+            (field_size + 0.4, 0, field_size + 0.2),
+            (field_size + 0.3, 0, -field_size - 0.4),
+            (-field_size - 0.3, 0, -field_size - 0.3)
+        ]
+        
+        for x, y, z in desert_rocks:
+            # Cada pedra com tamanho ligeiramente diferente
+            scale = 0.8 + random.random() * 0.4
+            glPushMatrix()
+            glTranslatef(x, 0.05 * scale, z)
+            glScalef(0.2 * scale, 0.1 * scale, 0.25 * scale)
+            glutSolidCube(1.0)
+            glPopMatrix()
+    
+    def _draw_beach_borders(self, field_size, width, height):
+        """Cerca simples de madeira para a praia"""
+        # Cor da madeira mais clara para praia
+        glColor3f(0.7, 0.5, 0.3)
+        
+        # Postes verticais nas bordas
+        post_positions = [
+            # Borda Norte
+            [(-field_size, 0, field_size), (field_size, 0, field_size)],
+            # Borda Sul  
+            [(-field_size, 0, -field_size), (field_size, 0, -field_size)],
+            # Borda Leste
+            [(field_size, 0, -field_size), (field_size, 0, field_size)],
+            # Borda Oeste
+            [(-field_size, 0, -field_size), (-field_size, 0, field_size)]
+        ]
+        
+        for start, end in post_positions:
+            # Calcula o número de postes baseado na distância
+            distance = ((end[0] - start[0])**2 + (end[2] - start[2])**2)**0.5
+            num_posts = int(distance / 1.5) + 1
+            
+            for i in range(num_posts):
+                t = i / max(1, num_posts - 1)
+                x = start[0] + t * (end[0] - start[0])
+                z = start[2] + t * (end[2] - start[2])
+                
+                # Poste de madeira
+                glPushMatrix()
+                glTranslatef(x, height, z)
+                glScalef(0.1, height * 2, 0.1)
+                glutSolidCube(1.0)
+                glPopMatrix()
+        
+        # Ripas horizontais conectando os postes
+        glColor3f(0.6, 0.4, 0.2)
+        self._draw_horizontal_fence_rails(field_size, height)
+    
+    def _draw_forest_borders(self, field_size, width, height):
+        """Pedras naturais formando a borda da floresta"""
+        
+        # Verifica se a textura de pedra está disponível
+        use_rock_texture = hasattr(self, 'textures') and 'rock' in self.textures
+        
+        if use_rock_texture:
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, self.textures['rock'])
+            glColor3f(1.0, 1.0, 1.0)  # Branco para não alterar a textura
+        else:
+            glDisable(GL_TEXTURE_2D)
+            glColor3f(0.4, 0.4, 0.4)  # Cor de pedra cinza escura como fallback
+        
+        # Espaçamento entre as pedras
+        stone_spacing = 0.9
+        
+        # Lista de diferentes tamanhos de pedras para variação
+        import random
+        random.seed(42)  # Semente fixa para consistência
+        
+        def draw_textured_rock_cube():
+            """Desenha um cubo com coordenadas de textura para simular uma pedra"""
+            if use_rock_texture:
+                glBegin(GL_QUADS)
+                # Face frontal
+                glTexCoord2f(0, 0); glVertex3f(-0.5, -0.5,  0.5)
+                glTexCoord2f(1, 0); glVertex3f( 0.5, -0.5,  0.5)
+                glTexCoord2f(1, 1); glVertex3f( 0.5,  0.5,  0.5)
+                glTexCoord2f(0, 1); glVertex3f(-0.5,  0.5,  0.5)
+                
+                # Face traseira
+                glTexCoord2f(1, 0); glVertex3f(-0.5, -0.5, -0.5)
+                glTexCoord2f(1, 1); glVertex3f(-0.5,  0.5, -0.5)
+                glTexCoord2f(0, 1); glVertex3f( 0.5,  0.5, -0.5)
+                glTexCoord2f(0, 0); glVertex3f( 0.5, -0.5, -0.5)
+                
+                # Face superior
+                glTexCoord2f(0, 1); glVertex3f(-0.5,  0.5, -0.5)
+                glTexCoord2f(0, 0); glVertex3f(-0.5,  0.5,  0.5)
+                glTexCoord2f(1, 0); glVertex3f( 0.5,  0.5,  0.5)
+                glTexCoord2f(1, 1); glVertex3f( 0.5,  0.5, -0.5)
+                
+                # Face inferior
+                glTexCoord2f(1, 1); glVertex3f(-0.5, -0.5, -0.5)
+                glTexCoord2f(0, 1); glVertex3f( 0.5, -0.5, -0.5)
+                glTexCoord2f(0, 0); glVertex3f( 0.5, -0.5,  0.5)
+                glTexCoord2f(1, 0); glVertex3f(-0.5, -0.5,  0.5)
+                
+                # Face direita
+                glTexCoord2f(1, 0); glVertex3f( 0.5, -0.5, -0.5)
+                glTexCoord2f(1, 1); glVertex3f( 0.5,  0.5, -0.5)
+                glTexCoord2f(0, 1); glVertex3f( 0.5,  0.5,  0.5)
+                glTexCoord2f(0, 0); glVertex3f( 0.5, -0.5,  0.5)
+                
+                # Face esquerda
+                glTexCoord2f(0, 0); glVertex3f(-0.5, -0.5, -0.5)
+                glTexCoord2f(1, 0); glVertex3f(-0.5, -0.5,  0.5)
+                glTexCoord2f(1, 1); glVertex3f(-0.5,  0.5,  0.5)
+                glTexCoord2f(0, 1); glVertex3f(-0.5,  0.5, -0.5)
+                glEnd()
+            else:
+                glutSolidCube(1.0)
+        
+        # Borda Norte
+        x = -field_size - width
+        while x <= field_size + width:
+            # Variação no tamanho e posição das pedras
+            scale_factor = 0.3 + random.random() * 0.4  # Entre 0.3 e 0.7
+            y_offset = random.random() * 0.05  # Pequena variação na altura
+            z_offset = (random.random() - 0.5) * 0.2  # Pequeno deslocamento para naturalidade
+            
+            glPushMatrix()
+            glTranslatef(x, height * scale_factor + y_offset, field_size + width/2 + z_offset)
+            glScalef(scale_factor, scale_factor * 0.8, scale_factor)
+            draw_textured_rock_cube()  # Cubo com textura para formato rochoso
+            glPopMatrix()
+            x += stone_spacing
+            
+        # Borda Sul
+        x = -field_size - width
+        while x <= field_size + width:
+            scale_factor = 0.3 + random.random() * 0.4
+            y_offset = random.random() * 0.05
+            z_offset = (random.random() - 0.5) * 0.2
+            
+            glPushMatrix()
+            glTranslatef(x, height * scale_factor + y_offset, -field_size - width/2 + z_offset)
+            glScalef(scale_factor, scale_factor * 0.8, scale_factor)
+            draw_textured_rock_cube()
+            glPopMatrix()
+            x += stone_spacing
+            
+        # Borda Leste
+        z = -field_size - width
+        while z <= field_size + width:
+            scale_factor = 0.3 + random.random() * 0.4
+            y_offset = random.random() * 0.05
+            x_offset = (random.random() - 0.5) * 0.2
+            
+            glPushMatrix()
+            glTranslatef(field_size + width/2 + x_offset, height * scale_factor + y_offset, z)
+            glScalef(scale_factor, scale_factor * 0.8, scale_factor)
+            draw_textured_rock_cube()
+            glPopMatrix()
+            z += stone_spacing
+            
+        # Borda Oeste
+        z = -field_size - width
+        while z <= field_size + width:
+            scale_factor = 0.3 + random.random() * 0.4
+            y_offset = random.random() * 0.05
+            x_offset = (random.random() - 0.5) * 0.2
+            
+            glPushMatrix()
+            glTranslatef(-field_size - width/2 + x_offset, height * scale_factor + y_offset, z)
+            glScalef(scale_factor, scale_factor * 0.8, scale_factor)
+            draw_textured_rock_cube()
+            glPopMatrix()
+            z += stone_spacing
+            
+        # Adiciona algumas pedras maiores nos cantos como destaque
+        if use_rock_texture:
+            glColor3f(0.8, 0.8, 0.85)  # Cor ligeiramente mais clara para as pedras dos cantos
+        else:
+            glColor3f(0.3, 0.3, 0.35)  # Cor ligeiramente diferente para as pedras dos cantos
+        
+        corner_positions = [
+            (-field_size - width*0.7, 0, field_size + width*0.7),
+            (field_size + width*0.7, 0, field_size + width*0.7),
+            (field_size + width*0.7, 0, -field_size - width*0.7),
+            (-field_size - width*0.7, 0, -field_size - width*0.7)
+        ]
+        
+        for x, y, z in corner_positions:
+            glPushMatrix()
+            glTranslatef(x, 0.15, z)
+            glScalef(0.6, 0.3, 0.6)
+            draw_textured_rock_cube()
+            glPopMatrix()
+            
+        # Desabilita a textura após usar
+        if use_rock_texture:
+            glDisable(GL_TEXTURE_2D)
+    
+    def _draw_horizontal_fence_rails(self, field_size, height):
+        """Desenha ripas horizontais para a cerca de neve"""
+        rail_height = height * 0.7
+        
+        # Ripas horizontais conectando toda a volta
+        glBegin(GL_QUADS)
+        
+        # Ripa Norte
+        glVertex3f(-field_size, rail_height, field_size)
+        glVertex3f(field_size, rail_height, field_size)
+        glVertex3f(field_size, rail_height + 0.05, field_size)
+        glVertex3f(-field_size, rail_height + 0.05, field_size)
+        
+        # Ripa Sul
+        glVertex3f(-field_size, rail_height, -field_size)
+        glVertex3f(field_size, rail_height, -field_size)
+        glVertex3f(field_size, rail_height + 0.05, -field_size)
+        glVertex3f(-field_size, rail_height + 0.05, -field_size)
+        
+        # Ripa Leste
+        glVertex3f(field_size, rail_height, -field_size)
+        glVertex3f(field_size, rail_height, field_size)
+        glVertex3f(field_size, rail_height + 0.05, field_size)
+        glVertex3f(field_size, rail_height + 0.05, -field_size)
+        
+        # Ripa Oeste
+        glVertex3f(-field_size, rail_height, -field_size)
+        glVertex3f(-field_size, rail_height, field_size)
+        glVertex3f(-field_size, rail_height + 0.05, field_size)
+        glVertex3f(-field_size, rail_height + 0.05, -field_size)
+        
+        glEnd()
 
     def draw_hole(self):
         glPushMatrix()
@@ -173,6 +657,7 @@ class Renderer:
         
         # Desenha os elementos principais do jogo
         self.draw_ground()
+        self.draw_field_borders()  # Adiciona as bordas temáticas criativas
         self.draw_hole()
         self.draw_obstacles()
         self.draw_ball()
