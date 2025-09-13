@@ -6,25 +6,16 @@ class Config:
     RAIO_BOLA = 0.22
     ATRITO = 0.98
     VEL_MIN = 0.003
-    
-    # --- MUDANÇA 1 ---
-    # Diminuímos o DT para uma física mais precisa e estável.
-    DT = 0.05
+    DT = 0.05 # delta time (tempo entre frames)
 
     RAIO_BURACO = 0.35
-    
-    # --- MUDANÇA 2 ---
-    # Aumentamos o multiplicador da tacada para compensar o DT menor.
     FORCA_MULTIPLICADOR = 3.5
 
     RAIO_ATRACAO_BURACO = 0.8
     FORCA_ATRACAO_BURACO = 0.4
     AMORTECIMENTO_BURACO = 1.5 
 
-    # --- MUDANÇA 3 ---
-    # Aumentamos a gravidade para compensar o DT menor.
     FORCA_GRAVIDADE = 9.8 * 0.7
-    
     RESTITUICAO_SOLO = 0.9
 
     FORCA_MAXIMA = 2.5
