@@ -6,12 +6,10 @@ from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
 from PIL import Image
 from config import Config
 from utils import ui
-from .scenario_builders import (
-    draw_forest_sky, draw_mountains, draw_extended_ground, draw_trees,
-    draw_snow_sky, draw_snow_mountains, draw_snow_ground, draw_snow_elements,
-    draw_snowman, draw_beach_sky, draw_beach_horizon, draw_beach_ground, draw_beach_elements, 
-    draw_desert_ground,draw_desert_dunes, draw_desert_sky, draw_desert_elements
-)
+from .scenarios.forest import ForestScenario
+from .scenarios.snow import SnowScenario
+from .scenarios.desert import DesertScenario
+from .scenarios.beach import BeachScenario
  
 def load_texture(filepath):      
     img = Image.open(filepath).convert("RGB")
@@ -30,25 +28,33 @@ class Renderer:
         self.textures = {}
         self.quadric = gluNewQuadric()
         self.menu_buttons = []
-        self._ui_prev_depth = None
-        
-        
-        self.scenarios = {
-            0: "snow",   
-            1: "desert",  
-            2: "beach",   
-            3: "forest",    
-        }  
+        self.current_scenario = None
+        self.scenarios = [
+            SnowScenario,
+            DesertScenario,
+            BeachScenario,
+            ForestScenario,
+        ]
         
     def get_current_scenario(self):
-      
         level_index = self.game.level_index
-        return self.scenarios.get(level_index, "forest") 
-
+        num_scenarios = len(self.scenarios)
+        
+        scenario_index = level_index % num_scenarios
+        scenario_class = self.scenarios[scenario_index]
+        
+        # Re-instancia o cenário apenas se for diferente do atual
+        if not self.current_scenario or not isinstance(self.current_scenario, scenario_class):
+            self.current_scenario = scenario_class(self.game, self)
+            
+        return self.current_scenario
     
+    def draw_scenario_background(self):
+        scenario = self.get_current_scenario()
+        scenario.draw()
+        
     def initialize_textures(self):
         self.textures['grass'] = load_texture("assets/textures/grass.png")
-        
         
     def draw_ground(self):
         if 'grass' in self.textures:
@@ -123,49 +129,7 @@ class Renderer:
                 if getattr(o, 'type', '') == 'water':
                     o.draw()
             glDisable(GL_BLEND)
-
-    def draw_scenario_background(self):
-        scenario = self.get_current_scenario()
-        
-        if scenario == "forest":
-            self.draw_forest_background()
-        elif scenario == "desert":
-            self.draw_desert_background()
-        elif scenario == "snow":
-            self.draw_snow_background()
-        elif scenario == "beach":
-            self.draw_beach_background()
-        else:
-            self.draw_forest_background()
     
-    def draw_forest_background(self):
-        draw_forest_sky(self)
-        draw_mountains(self)
-        draw_extended_ground(self)
-        draw_trees(self)
-    
-
-    def draw_desert_background(self):
-        draw_desert_sky(self)
-        draw_desert_dunes(self)
-        draw_desert_ground(self)
-        draw_desert_elements(self)
-
-    def draw_snow_background(self):
-        draw_snow_sky(self)
-        draw_snow_mountains(self)
-        draw_snow_ground(self)
-        draw_snow_elements(self)
-        draw_snowman(self)
-
-
-    def draw_beach_background(self):
-        draw_beach_sky(self)
-        draw_beach_horizon(self)
-        draw_beach_ground(self)
-        draw_beach_elements(self)
-
-
     def draw_ui(self):
         w, h = Config.WINDOW_SIZE
         glMatrixMode(GL_PROJECTION)
@@ -185,7 +149,7 @@ class Renderer:
         mode = self.game.camera.mode()
         status = "VENCEU!" if self.game.won else ""
         write_text(10, h-30, f"Setas: mira/forca | Espaco: tacada | C: camera({mode}) | R: reset | ESC: MENU")
-        write_text(10, h-55, f"Level: {self.game.level_index + 1} | Forca: {self.game.shot_power:.2f} | Angulo: {self.game.aim_angle:.1f} | Tacadas: {self.game.shots} | {status}")
+        write_text(10, h-55, f"Level: {self.game.level_index + 1} | Angulo: {self.game.aim_angle:.1f} | Tacadas: {self.game.shots} | {status}")
         
         glEnable(GL_DEPTH_TEST)
         glMatrixMode(GL_MODELVIEW)
