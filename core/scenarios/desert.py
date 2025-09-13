@@ -50,22 +50,48 @@ class DesertScenario(BaseScenario):
             glEnd()
 
     def draw_ground(self):
-        glColor3f(0.9, 0.8, 0.5)
+        if hasattr(self.renderer, 'textures') and 'sand' in self.renderer.textures:
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, self.renderer.textures['sand'])
+            glColor3f(1,1,1)  
+            use_texture = True
+        else:
+            glDisable(GL_TEXTURE_2D)
+            glColor3f(0.9, 0.8, 0.5)  
+            use_texture = False
+    
         field_size = Config.CAMPO_METADE
         extended_size = 25.0
+
         regions = [
+            # Norte
             [(-extended_size, 0, field_size), (extended_size, 0, extended_size)],
+            # Sul  
             [(-extended_size, 0, -extended_size), (extended_size, 0, -field_size)],
+            # Leste
             [(field_size, 0, -field_size), (extended_size, 0, field_size)],
+            # Oeste
             [(-extended_size, 0, -field_size), (-field_size, 0, field_size)]
         ]
+
         for (x1, y1, z1), (x2, y2, z2) in regions:
             glBegin(GL_QUADS)
-            glVertex3f(x1, y1, z1)
-            glVertex3f(x2, y1, z1) 
-            glVertex3f(x2, y2, z2)
-            glVertex3f(x1, y2, z2)
+            if use_texture:
+                # Coordenadas de textura simples e repetitivas
+                texture_repeat = 3.0  # Quantas vezes a textura vai repetir (maior para mais detalhes na areia)
+                glTexCoord2f(0, 0); glVertex3f(x1, y1, z1)
+                glTexCoord2f(texture_repeat, 0); glVertex3f(x2, y1, z1) 
+                glTexCoord2f(texture_repeat, texture_repeat); glVertex3f(x2, y2, z2)
+                glTexCoord2f(0, texture_repeat); glVertex3f(x1, y2, z2)
+            else:
+                glVertex3f(x1, y1, z1)
+                glVertex3f(x2, y1, z1) 
+                glVertex3f(x2, y2, z2)
+                glVertex3f(x1, y2, z2)
             glEnd()
+
+        if use_texture:
+            glDisable(GL_TEXTURE_2D)
 
     def draw_elements(self):
         glDisable(GL_TEXTURE_2D)
