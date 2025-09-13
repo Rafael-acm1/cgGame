@@ -29,8 +29,8 @@ class Renderer:
         self.current_scenario = None
         self.scenarios = [
             ForestScenario,
-            BeachScenario,
             DesertScenario,
+            BeachScenario,
             SnowScenario,
         ]
         
@@ -48,15 +48,17 @@ class Renderer:
         return self.current_scenario
     
     def get_field_texture(self):
+        """Retorna a textura apropriada para o campo baseada no cenário atual"""
         level_index = self.game.level_index
         num_scenarios = len(self.scenarios)
         scenario_index = level_index % num_scenarios
 
+        # Mapeamento cenário -> textura do campo (ordem atual dos cenários)
         texture_mapping = {
-            0: 'snow',     
-            1: 'sand',      
-            2: 'beach_sand', 
-            3: 'grass2',    
+            0: 'grass2',     # ForestScenario
+            1: 'sand',       # DesertScenario  
+            2: 'beachSand',  # BeachScenario
+            3: 'snow',       # SnowScenario
         }
         
         texture_name = texture_mapping.get(scenario_index, 'grass')
@@ -71,8 +73,7 @@ class Renderer:
         self.textures['grass2'] = load_texture("assets/textures/grass2.png")
         self.textures['snow'] = load_texture("assets/textures/snow.png")
         self.textures['sand'] = load_texture("assets/textures/sand.png")
-        self.textures['beach_sand'] = load_texture("assets/textures/beach_sand.png")
-        self.textures['grass2'] = load_texture("assets/textures/grass2.png")
+        self.textures['beachSand'] = load_texture("assets/textures/beach_sand.png")
         self.textures['rock'] = load_texture("assets/textures/rock.png")
         self.textures['cacto'] = load_texture("assets/textures/cacto.png")
         
@@ -124,14 +125,14 @@ class Renderer:
         
         glDisable(GL_TEXTURE_2D)
         
-        if scenario_index == 0:  # Snow Scenario - Cercas de madeira com neve
-            self._draw_snow_borders(field_size, border_width, border_height)
-        elif scenario_index == 1:  # Desert Scenario - Muros de pedra do deserto
-            self._draw_desert_borders(field_size, border_width, border_height)
-        elif scenario_index == 2:  # Beach Scenario - Troncos de palmeira
-            self._draw_beach_borders(field_size, border_width, border_height)
-        elif scenario_index == 3:  # Forest Scenario - Cerca viva de arbustos
+        if scenario_index == 0:  # Forest Scenario - Pedras ao redor
             self._draw_forest_borders(field_size, border_width, border_height)
+        elif scenario_index == 1:  # Desert Scenario - Cactos
+            self._draw_desert_borders(field_size, border_width, border_height)
+        elif scenario_index == 2:  # Beach Scenario - Cerca de madeira simples
+            self._draw_beach_borders(field_size, border_width, border_height)
+        elif scenario_index == 3:  # Snow Scenario - Cerca de madeira com neve
+            self._draw_snow_borders(field_size, border_width, border_height)
     
     def _draw_snow_borders(self, field_size, width, height):
         """Cerca de madeira coberta de neve"""
