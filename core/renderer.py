@@ -649,13 +649,54 @@ class Renderer:
         self.draw_power_bar()
         glutSwapBuffers()
 
+    def render_options(self):
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        w = glutGet(GLUT_WINDOW_WIDTH)
+        h = glutGet(GLUT_WINDOW_HEIGHT)
+
+        ui.begin_2d(w, h)
+        titulo = "OPÇÕES"
+        tw = ui.text_width(titulo)
+        ui.draw_text((w - tw)//2, h - 100, titulo, color=(1,1,1,1))
+        
+        btn_w, btn_h = 220, 60
+        btn_x = (w - btn_w)//2
+        btn_y = h//2 - btn_h//2
+
+        self.menu_buttons = [{
+            "id": "music", 
+            "label": "Desativar música",
+            "x": btn_x, 
+            "y": btn_y, 
+            "w": btn_w, 
+            "h": btn_h,
+            "action": lambda: self.game.toggle_music()
+        },
+        {
+            "id": "voltar",
+            "label": "Voltar",
+            "x": btn_x,
+            "y": btn_y,
+            "w": btn_w,
+            "h": btn_h,
+            "action": lambda: setattr(self.game, 'SCREEN_STATE', Config.SCREEN_STATE['MENU'])
+        },
+        ]
+        
+        for i, b in enumerate(self.menu_buttons):
+            b['y'] = btn_y - i * (btn_h + 10)
+            ui.draw_button(b['x'], b['y'], b['w'], b['h'], b['label'])
+
+        ui.end_2d()
+        glutSwapBuffers()
+
     def render(self):
         if self.game.SCREEN_STATE == Config.SCREEN_STATE['PLAYING']:
             self.render_game()
         elif self.game.SCREEN_STATE == Config.SCREEN_STATE['MENU']:
             self.render_menu()
         elif self.game.SCREEN_STATE == Config.SCREEN_STATE['OPTIONS']:
-            self.render_menu()
+            self.render_options()
 
     def draw_power_bar(self):
         if not self.game.isShooting:
