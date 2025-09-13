@@ -173,7 +173,7 @@ class Game:
         self.shot_power = Config.FORCA_MINIMA
         self.angle_vertical = 0
         
-        def toggle_music(self):
+    def toggle_music(self):
         if self.sounds.get("bg_music"):
             if self.isPlaying:
                 self.sounds["bg_music"].stop()
