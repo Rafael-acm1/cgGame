@@ -17,6 +17,9 @@ class BoxObstacle:
         minx = self.cx - self.sx - r; maxx = self.cx + self.sx + r
         minz = self.cz - self.sz - r; maxz = self.cz + self.sz + r
         if (minx <= bx <= maxx) and (minz <= bz <= maxz):
+            if ball.pos.y > self.h + r:
+                return
+                
             dist_left   = abs(bx - minx); dist_right  = abs(maxx - bx)
             dist_bottom = abs(bz - minz); dist_top    = abs(maxz - bz)
             min_dist    = min(dist_left, dist_right, dist_bottom, dist_top)

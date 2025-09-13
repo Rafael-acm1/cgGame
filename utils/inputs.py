@@ -34,6 +34,10 @@ def keyboard(key, x, y, game):
         canShoot = not game.won and game.ball.horizontal_speed() < 0.01
         if canShoot and not game.isShooting:
             game.start_shooting()
+    elif k in ('s', 'S'):
+        game.angle_vertical = min(45.0, game.angle_vertical + 0.5)
+    elif k in ('w', 'W'):
+        game.angle_vertical = max(0.0, game.angle_vertical - 0.5)
 
 def keyboard_up(key, x, y, game, sounds):
     """Lida com eventos de tecla SOLTA."""
