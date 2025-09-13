@@ -46,9 +46,9 @@ class BeachScenario(BaseScenario):
         glEnd()
 
     def draw_ground(self):
-        if hasattr(self.renderer, 'textures') and 'beachSand' in self.renderer.textures:
+        if hasattr(self.renderer, 'textures') and 'beach_sand' in self.renderer.textures:
             glEnable(GL_TEXTURE_2D)
-            glBindTexture(GL_TEXTURE_2D, self.renderer.textures['beachSand'])
+            glBindTexture(GL_TEXTURE_2D, self.renderer.textures['beach_sand'])
             glColor3f(1,1,1)
             use_texture = True
         else:

@@ -65,6 +65,7 @@ class Game:
             self.sounds["water_splash"].play()
     
     def reset(self): self.load_level(self.level_index)
+    
     def next_level(self): self.load_level(self.level_index + 1)
 
     def update_physics(self):
