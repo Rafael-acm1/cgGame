@@ -38,7 +38,7 @@ class Config:
     DATA_DIR = "data"
     SCORE_FILE = os.path.join(DATA_DIR, "scores.json")
 
-    SCREEN_STATE = { "MENU": 0, "PLAYING": 1, "SCORES": 2 }
+    SCREEN_STATE = { "MENU": 0, "PLAYING": 1, "SCORES": 2 , "OPTIONS": 3 }
 
     VELOCIDADE_MAX_QUEDA = 0.5
     ALTURA_INICIAL_BOLA = 4.0

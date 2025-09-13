@@ -161,11 +161,54 @@ class Renderer:
         self.draw_power_bar()
         glutSwapBuffers()
 
+    def render_options(self):
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        w = glutGet(GLUT_WINDOW_WIDTH)
+        h = glutGet(GLUT_WINDOW_HEIGHT)
+
+        ui.begin_2d(w, h)
+        titulo = "OPÇÕES"
+        tw = ui.text_width(titulo)
+        ui.draw_text((w - tw)//2, h - 100, titulo, color=(1,1,1,1))
+        
+        btn_w, btn_h = 220, 60
+        btn_x = (w - btn_w)//2
+        btn_y = h//2 - btn_h//2
+
+        self.menu_buttons = [{
+            "id": "music", 
+            "label": "Desativar música",
+            "x": btn_x, 
+            "y": btn_y, 
+            "w": btn_w, 
+            "h": btn_h,
+            "action": lambda: self.game.toggle_music()
+        },
+        {
+            "id": "voltar",
+            "label": "Voltar",
+            "x": btn_x,
+            "y": btn_y,
+            "w": btn_w,
+            "h": btn_h,
+            "action": lambda: setattr(self.game, 'SCREEN_STATE', Config.SCREEN_STATE['MENU'])
+        },
+        ]
+        
+        for i, b in enumerate(self.menu_buttons):
+            b['y'] = btn_y - i * (btn_h + 10)
+            ui.draw_button(b['x'], b['y'], b['w'], b['h'], b['label'])
+
+        ui.end_2d()
+        glutSwapBuffers()
+
     def render(self):
         if self.game.SCREEN_STATE == Config.SCREEN_STATE['PLAYING']:
             self.render_game()
         elif self.game.SCREEN_STATE == Config.SCREEN_STATE['MENU']:
             self.render_menu()
+        elif self.game.SCREEN_STATE == Config.SCREEN_STATE['OPTIONS']:
+            self.render_options()
 
     def draw_power_bar(self):
         if not self.game.isShooting:
@@ -211,15 +254,38 @@ class Renderer:
             "x": btn_x, 
             "y": btn_y, 
             "w": btn_w, 
-            "h": btn_h
-        }]
+            "h": btn_h,
+            "action": lambda: setattr(self.game, 'SCREEN_STATE', Config.SCREEN_STATE['PLAYING'])
+        },
+        {
+            "id": "options",
+            "label": "Opções",
+            "x": btn_x,
+            "y": btn_y,
+            "w": btn_w,
+            "h": btn_h,
+            "action": lambda: setattr(self.game, 'SCREEN_STATE', Config.SCREEN_STATE['OPTIONS'])
+        },
+        {
+            "id": "exit", 
+            "label": "Sair",
+            "x": btn_x, 
+            "y": btn_y, 
+            "w": btn_w, 
+            "h": btn_h,
+            "action": lambda: glutLeaveMainLoop()
+        }
+        ]
+        
+        for i, b in enumerate(self.menu_buttons):
+            b['y'] = btn_y - i * (btn_h + 10)
+            ui.draw_button(b['x'], b['y'], b['w'], b['h'], b['label'])
 
-        ui.draw_button(btn_x, btn_y, btn_w, btn_h, "Iniciar Jogo")
         ui.end_2d()
         glutSwapBuffers()
 
     def on_mouse(self, button, state, x, y):
-        if self.game.SCREEN_STATE != Config.SCREEN_STATE['MENU']:
+        if self.game.SCREEN_STATE not in [Config.SCREEN_STATE['MENU'], Config.SCREEN_STATE['OPTIONS']]:
             return
         if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
             h = glutGet(GLUT_WINDOW_HEIGHT)
@@ -227,6 +293,5 @@ class Renderer:
             for b in self.menu_buttons:
                 if (x >= b['x'] and x <= b['x'] + b['w'] and
                     y_gl >= b['y'] and y_gl <= b['y'] + b['h']):
-                    if b['id'] == 'start':
-                        self.game.SCREEN_STATE = Config.SCREEN_STATE['PLAYING']
+                    b['action']()
                     break
