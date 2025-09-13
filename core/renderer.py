@@ -55,7 +55,7 @@ class Renderer:
         texture_mapping = {
             0: 'snow',     
             1: 'sand',      
-            2: 'beachSand', 
+            2: 'beach_sand', 
             3: 'grass2',    
         }
         
@@ -71,7 +71,7 @@ class Renderer:
         self.textures['grass2'] = load_texture("assets/textures/grass2.png")
         self.textures['snow'] = load_texture("assets/textures/snow.png")
         self.textures['sand'] = load_texture("assets/textures/sand.png")
-        self.textures['beachSand'] = load_texture("assets/textures/beachSand.png")
+        self.textures['beach_sand'] = load_texture("assets/textures/beach_sand.png")
         self.textures['grass2'] = load_texture("assets/textures/grass2.png")
         self.textures['rock'] = load_texture("assets/textures/rock.png")
         self.textures['cacto'] = load_texture("assets/textures/cacto.png")
