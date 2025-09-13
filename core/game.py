@@ -8,6 +8,7 @@ from entities.ball import Ball
 from entities.obstacle import BoxObstacle, Ramp, WaterObstacle 
 from entities.camera import Camera
 from core.renderer import Renderer
+import pygame
 
 class Game:
     def __init__(self, sounds):
@@ -19,6 +20,8 @@ class Game:
         self.renderer = Renderer(self)
         self.renderer.initialize_textures()
         self.load_level(self.level_index)
+        self.angle_vertical = 0
+        self.isPlaying = False
         
     def load_level(self, index):
         self.level_index = index % len(self.level_files)
@@ -51,6 +54,7 @@ class Game:
     def reset_game_state(self):
         self.aim_angle = 25.0; self.shot_power = 0.35; self.shots = 0
         self.won = False; self.isShooting = False
+        self.angle_vertical = 0
     
     def reset_ball_to_start(self):
         """Reseta a bola para a posição inicial quando toca na água"""
@@ -65,6 +69,7 @@ class Game:
             self.sounds["water_splash"].play()
     
     def reset(self): self.load_level(self.level_index)
+    
     def next_level(self): self.load_level(self.level_index + 1)
 
     def update_physics(self):
@@ -161,6 +166,17 @@ class Game:
         self.isShooting = False; angle_rad = radians(self.aim_angle)
         force = self.shot_power * Config.FORCA_MULTIPLICADOR
         self.ball.vel.x += sin(angle_rad) * force; self.ball.vel.z += cos(angle_rad) * force
+        self.ball.vel.y += sin(self.angle_vertical) * (force * 1.7) 
         self.shots += 1
         if self.sounds.get("hit"): self.sounds["hit"].play()
         self.shot_power = Config.FORCA_MINIMA
+        self.angle_vertical = 0
+        
+    def toggle_music(self):
+        if self.sounds.get("bg_music"):
+            if self.isPlaying:
+                self.sounds["bg_music"].stop()
+                self.isPlaying = False
+            else:
+                self.sounds["bg_music"].play(loops=-1)
+                self.isPlaying = True

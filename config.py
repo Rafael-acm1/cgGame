@@ -23,11 +23,11 @@ class Config:
 
     # --- MUDANÇA 3 ---
     # Aumentamos a gravidade para compensar o DT menor.
-    FORCA_GRAVIDADE = 9.8 * 1.5
+    FORCA_GRAVIDADE = 9.8 * 0.7
     
     RESTITUICAO_SOLO = 0.9
 
-    FORCA_MAXIMA = 1.5
+    FORCA_MAXIMA = 2.5
     FORCA_MINIMA = 0.05
     FORCA_OSCILACAO_VELOCIDADE = 0.03
 
@@ -38,7 +38,7 @@ class Config:
     DATA_DIR = "data"
     SCORE_FILE = os.path.join(DATA_DIR, "scores.json")
 
-    SCREEN_STATE = { "MENU": 0, "PLAYING": 1, "SCORES": 2 }
+    SCREEN_STATE = { "MENU": 0, "PLAYING": 1, "SCORES": 2 , "OPTIONS": 3 }
 
     VELOCIDADE_MAX_QUEDA = 0.5
     ALTURA_INICIAL_BOLA = 4.0

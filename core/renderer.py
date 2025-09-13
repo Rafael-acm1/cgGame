@@ -2,7 +2,6 @@ from math import sin, cos, pi
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
-from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
 from PIL import Image
 from config import Config
 from utils import ui
@@ -20,7 +19,6 @@ def load_texture(filepath):
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width, img.height, 0, GL_RGB, GL_UNSIGNED_BYTE, img_data)
     return texture_id
-    
 
 class Renderer:
     def __init__(self, game):
@@ -30,10 +28,10 @@ class Renderer:
         self.menu_buttons = []
         self.current_scenario = None
         self.scenarios = [
-            SnowScenario,
-            DesertScenario,
-            BeachScenario,
             ForestScenario,
+            BeachScenario,
+            DesertScenario,
+            SnowScenario,
         ]
         
     def get_current_scenario(self):
@@ -70,6 +68,7 @@ class Renderer:
         
     def initialize_textures(self):
         self.textures['grass'] = load_texture("assets/textures/grass.png")
+        self.textures['grass2'] = load_texture("assets/textures/grass2.png")
         self.textures['snow'] = load_texture("assets/textures/snow.png")
         self.textures['sand'] = load_texture("assets/textures/sand.png")
         self.textures['beachSand'] = load_texture("assets/textures/beachSand.png")
@@ -592,6 +591,7 @@ class Renderer:
         glPushMatrix()
         glTranslatef(b.pos.x, b.radius + 0.05, b.pos.z)
         glRotatef(self.game.aim_angle, 0.0, 1.0, 0.0)
+        glRotatef(-self.game.angle_vertical, 1.0, 0.0, 0.0)
         glColor3f(1.0, 0.0, 0.0)
         glBegin(GL_LINES)
         glVertex3f(0.0, 0.0, 0.0)
@@ -613,59 +613,80 @@ class Renderer:
         if has_water:
             glEnable(GL_BLEND)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-            for o in self.game.obstacles:
-                if getattr(o, 'type', '') == 'water':
-                    o.draw()
+            for obstacle in self.game.obstacles:
+                if getattr(obstacle, 'type', '') == 'water':
+                    obstacle.draw()
             glDisable(GL_BLEND)
     
     def draw_ui(self):
         w, h = Config.WINDOW_SIZE
-        glMatrixMode(GL_PROJECTION)
-        glPushMatrix(); glLoadIdentity()
-        gluOrtho2D(0, w, 0, h)
-        glMatrixMode(GL_MODELVIEW)
-        glPushMatrix(); glLoadIdentity()
+        ui.begin_2d(w, h)
         
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_LIGHTING)
-        glColor3f(0.0, 0.0, 0.0)
-        def write_text(x, y, text):
-            glRasterPos2f(x, y)
-            for ch in text:
-                glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(ch))
-        
-        mode = self.game.camera.mode()
         status = "VENCEU!" if self.game.won else ""
-        write_text(10, h-30, f"Setas: mira/forca | Espaco: tacada | C: camera({mode}) | R: reset | ESC: MENU")
-        write_text(10, h-55, f"Level: {self.game.level_index + 1} | Angulo: {self.game.aim_angle:.1f} | Tacadas: {self.game.shots} | {status}")
-        
-        glEnable(GL_DEPTH_TEST)
-        glMatrixMode(GL_MODELVIEW)
-        glPopMatrix()
-        glMatrixMode(GL_PROJECTION)
-        glPopMatrix()
-        glMatrixMode(GL_MODELVIEW)
+        commands = f"Setas: mira/forca | Espaco: tacada | C: camera({self.game.camera.mode()}) | R: reset | ESC: MENU"
+        infos = f"Level: {self.game.level_index + 1} | Angulo: {self.game.aim_angle:.1f} | Tacadas: {self.game.shots} | {status}"
+
+        ui.draw_text(10, h-30, commands)
+        ui.draw_text(10, h-55, infos)       
+        ui.end_2d()
 
     def render_game(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
-        # Configura a câmera primeiro
         self.game.camera.setup(self.game.ball)
-        
-        # Desenha o cenário baseado no nível atual
         self.draw_scenario_background()
-        
-        # Desenha os elementos principais do jogo
         self.draw_ground()
         self.draw_field_borders()  # Adiciona as bordas temáticas criativas
         self.draw_hole()
         self.draw_obstacles()
         self.draw_ball()
-        # AJUSTE: Usa horizontal_speed() para decidir se mostra a mira
+
         if not self.game.won and self.game.ball.horizontal_speed() < 0.01:
             self.draw_aim()
+
         self.draw_ui()
         self.draw_power_bar()
+        glutSwapBuffers()
+
+    def render_options(self):
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        w = glutGet(GLUT_WINDOW_WIDTH)
+        h = glutGet(GLUT_WINDOW_HEIGHT)
+
+        ui.begin_2d(w, h)
+        titulo = "OPÇÕES"
+        tw = ui.text_width(titulo)
+        ui.draw_text((w - tw)//2, h - 100, titulo, color=(1,1,1,1))
+        
+        btn_w, btn_h = 220, 60
+        btn_x = (w - btn_w)//2
+        btn_y = h//2 - btn_h//2
+
+        self.menu_buttons = [{
+            "id": "music", 
+            "label": "Desativar música",
+            "x": btn_x, 
+            "y": btn_y, 
+            "w": btn_w, 
+            "h": btn_h,
+            "action": lambda: self.game.toggle_music()
+        },
+        {
+            "id": "voltar",
+            "label": "Voltar",
+            "x": btn_x,
+            "y": btn_y,
+            "w": btn_w,
+            "h": btn_h,
+            "action": lambda: setattr(self.game, 'SCREEN_STATE', Config.SCREEN_STATE['MENU'])
+        },
+        ]
+        
+        for i, b in enumerate(self.menu_buttons):
+            b['y'] = btn_y - i * (btn_h + 10)
+            ui.draw_button(b['x'], b['y'], b['w'], b['h'], b['label'])
+
+        ui.end_2d()
         glutSwapBuffers()
 
     def render(self):
@@ -673,15 +694,16 @@ class Renderer:
             self.render_game()
         elif self.game.SCREEN_STATE == Config.SCREEN_STATE['MENU']:
             self.render_menu()
+        elif self.game.SCREEN_STATE == Config.SCREEN_STATE['OPTIONS']:
+            self.render_options()
 
     def draw_power_bar(self):
-        game = self.game
-        if not game.isShooting:
+        if not self.game.isShooting:
             return
 
         pw_min = Config.FORCA_MINIMA
         pw_max = Config.FORCA_MAXIMA
-        ratio = (game.shot_power - pw_min) / (pw_max - pw_min)
+        ratio = (self.game.shot_power - pw_min) / (pw_max - pw_min)
         ratio = max(0.0, min(1.0, ratio))
 
         w = glutGet(GLUT_WINDOW_WIDTH)
@@ -693,95 +715,64 @@ class Renderer:
         x = (w - bar_w) // 2
         y = margin
 
-        glMatrixMode(GL_PROJECTION)
-        glPushMatrix()
-        glLoadIdentity()
-        glOrtho(0, w, 0, h, -1, 1)
-
-        glMatrixMode(GL_MODELVIEW)
-        glPushMatrix()
-        glLoadIdentity()
-
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_LIGHTING)
-
-        ui.draw_rect(x, y, bar_w, bar_h, color=(0,0,0,0.65))
+        ui.begin_2d(w, h)
         ui.draw_rect_outline(x, y, bar_w, bar_h, color=(1,1,1,0.9), width=2)
-
         fill_w = int(bar_w * ratio)
         ui.draw_rect(x+1, y+1, fill_w-2 if fill_w>2 else 0, bar_h-2, color=(ratio, 1 - ratio / 5, 0.2, 0.9))
-
-        mid_x = x + bar_w // 2
-        glColor3f(1.0, 1.0, 1.0)
-        glBegin(GL_LINES)
-        glVertex2f(mid_x, y)
-        glVertex2f(mid_x, y + bar_h)
-        glEnd()
-
-        glEnable(GL_DEPTH_TEST)
-        glMatrixMode(GL_MODELVIEW)
-        glPopMatrix()
-        glMatrixMode(GL_PROJECTION)
-        glPopMatrix()
-        glMatrixMode(GL_MODELVIEW)
+        ui.end_2d()
 
     def render_menu(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         w = glutGet(GLUT_WINDOW_WIDTH)
         h = glutGet(GLUT_WINDOW_HEIGHT)
 
-        glMatrixMode(GL_PROJECTION)
-        glPushMatrix()
-        glLoadIdentity()
-        glOrtho(0, w, 0, h, -1, 1)
-        glMatrixMode(GL_MODELVIEW)
-        glPushMatrix()
-        glLoadIdentity()
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_LIGHTING)
-        
-        titulo = "CGolf"
-        def text_width(txt):
-            return sum(glutBitmapWidth(GLUT_BITMAP_HELVETICA_18, ord(c)) for c in txt)
-
-        def draw_text(x, y, txt):
-            glRasterPos2f(x, y)
-            for c in txt:
-                glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(c))
-
-        tw = text_width(titulo)
-        draw_text((w - tw)//2, h - 100, titulo)
+        ui.begin_2d(w, h)
+        titulo = "Mini Golf 3D"
+        tw = ui.text_width(titulo)
+        ui.draw_text((w - tw)//2, h - 100, titulo, color=(1,1,1,1))
         
         btn_w, btn_h = 220, 60
         btn_x = (w - btn_w)//2
         btn_y = h//2 - btn_h//2
 
         self.menu_buttons = [{
-            "id": "start",
+            "id": "start", 
             "label": "Iniciar Jogo",
+            "x": btn_x, 
+            "y": btn_y, 
+            "w": btn_w, 
+            "h": btn_h,
+            "action": lambda: setattr(self.game, 'SCREEN_STATE', Config.SCREEN_STATE['PLAYING'])
+        },
+        {
+            "id": "options",
+            "label": "Opções",
             "x": btn_x,
             "y": btn_y,
             "w": btn_w,
-            "h": btn_h
-        }]
+            "h": btn_h,
+            "action": lambda: setattr(self.game, 'SCREEN_STATE', Config.SCREEN_STATE['OPTIONS'])
+        },
+        {
+            "id": "exit", 
+            "label": "Sair",
+            "x": btn_x, 
+            "y": btn_y, 
+            "w": btn_w, 
+            "h": btn_h,
+            "action": lambda: glutLeaveMainLoop()
+        }
+        ]
+        
+        for i, b in enumerate(self.menu_buttons):
+            b['y'] = btn_y - i * (btn_h + 10)
+            ui.draw_button(b['x'], b['y'], b['w'], b['h'], b['label'])
 
-        ui.draw_rect(btn_x, btn_y, btn_w, btn_h, color=(0,0,0,0.55))
-        ui.draw_rect_outline(btn_x, btn_y, btn_w, btn_h, color=(1,1,1,0.9), width=2)
-        label = "Iniciar Jogo"
-        lw = text_width(label)
-        lh = 18
-        draw_text(btn_x + (btn_w - lw)//2, btn_y + (btn_h - lh)//2 + 6, label)
-
-        glEnable(GL_DEPTH_TEST)
-        glMatrixMode(GL_MODELVIEW)
-        glPopMatrix()
-        glMatrixMode(GL_PROJECTION)
-        glPopMatrix()
-        glMatrixMode(GL_MODELVIEW)
+        ui.end_2d()
         glutSwapBuffers()
 
     def on_mouse(self, button, state, x, y):
-        if self.game.SCREEN_STATE != Config.SCREEN_STATE['MENU']:
+        if self.game.SCREEN_STATE not in [Config.SCREEN_STATE['MENU'], Config.SCREEN_STATE['OPTIONS']]:
             return
         if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
             h = glutGet(GLUT_WINDOW_HEIGHT)
@@ -789,6 +780,5 @@ class Renderer:
             for b in self.menu_buttons:
                 if (x >= b['x'] and x <= b['x'] + b['w'] and
                     y_gl >= b['y'] and y_gl <= b['y'] + b['h']):
-                    if b['id'] == 'start':
-                        self.game.SCREEN_STATE = Config.SCREEN_STATE['PLAYING']
+                    b['action']()
                     break
